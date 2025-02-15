@@ -1,13 +1,16 @@
 import "./globals.css"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import type React from "react" // Import React
+import type React from "react"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Minecraft Server Countdown",
-  description: "Countdown to our awesome Minecraft server launch!",
+  title: "FrogCraft - Minecraft Server",
+  description: "Willkommen auf dem FrogCraft Minecraft Server!",
+  icons: {
+    icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/favicon-gRDIqFYcmQbY5ZwMgn2adiU0ZO8EkV.png",
+  },
     generator: 'v0.dev'
 }
 
