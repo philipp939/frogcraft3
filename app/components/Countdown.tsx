@@ -36,13 +36,13 @@ export default function Countdown({ targetDate }: CountdownProps) {
   }, [targetDate])
 
   return (
-    <div className="flex justify-center items-center gap-4">
+    <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
       {Object.entries(timeLeft).map(([unit, value]) => (
         <div key={unit} className="flex flex-col items-center">
-          <div className="bg-blue-500 bg-opacity-50 rounded-lg p-4 backdrop-blur-sm w-24 h-24 flex items-center justify-center">
-            <span className="text-4xl font-bold text-white">{value.toString().padStart(2, "0")}</span>
+          <div className="bg-blue-500 bg-opacity-50 rounded-lg p-2 sm:p-4 backdrop-blur-sm w-16 sm:w-24 h-16 sm:h-24 flex items-center justify-center">
+            <span className="text-2xl sm:text-4xl font-bold text-white">{value.toString().padStart(2, "0")}</span>
           </div>
-          <div className="text-sm mt-2 text-white">{unit}</div>
+          <div className="text-xs sm:text-sm mt-2 text-white">{unit}</div>
         </div>
       ))}
     </div>

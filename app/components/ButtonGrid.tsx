@@ -6,20 +6,14 @@ import ModpackButton from "./ModpackButton"
 
 export default function ButtonGrid() {
   return (
-    <div className="grid grid-cols-6 sm:grid-cols-12 gap-4 mt-8 max-w-4xl mx-auto w-full">
-      <div className="col-span-6 sm:col-span-12">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-4xl">
+      <div className="col-span-1 sm:col-span-2 md:col-span-3">
         <DiscordButton />
       </div>
-      <div className="col-span-3 sm:col-span-4">
-        <RulesButton />
-      </div>
-      <div className="col-span-3 sm:col-span-4">
-        <CommandsButton />
-      </div>
-      <div className="col-span-6 sm:col-span-4">
-        <KeybindsButton />
-      </div>
-      <div className="col-span-6 sm:col-span-12">
+      <RulesButton />
+      <CommandsButton />
+      <KeybindsButton />
+      <div className="col-span-1 sm:col-span-2 md:col-span-3">
         <ModpackButton />
       </div>
     </div>

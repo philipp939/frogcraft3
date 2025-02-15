@@ -23,54 +23,52 @@ const FuturisticBackground: React.FC = () => {
     window.addEventListener("resize", resizeCanvas)
     resizeCanvas()
 
-    class Hexagon {
+    class Particle {
       x: number
       y: number
       size: number
+      speedX: number
+      speedY: number
       color: string
-      speed: number
 
-      constructor(x: number, y: number) {
-        this.x = x
-        this.y = y
-        this.size = Math.random() * 20 + 10
-        this.color = `rgba(0, ${Math.floor(Math.random() * 155 + 100)}, ${Math.floor(Math.random() * 155 + 100)}, ${Math.random() * 0.5 + 0.1})`
-        this.speed = Math.random() * 0.5 + 0.1
+      constructor() {
+        this.x = Math.random() * canvas.width
+        this.y = Math.random() * canvas.height
+        this.size = Math.random() * 3 + 1
+        this.speedX = Math.random() * 3 - 1.5
+        this.speedY = Math.random() * 3 - 1.5
+        this.color = `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.1})`
+      }
+
+      update() {
+        this.x += this.speedX
+        this.y += this.speedY
+
+        if (this.x > canvas.width) this.x = 0
+        else if (this.x < 0) this.x = canvas.width
+        if (this.y > canvas.height) this.y = 0
+        else if (this.y < 0) this.y = canvas.height
       }
 
       draw() {
         if (!ctx) return
         ctx.beginPath()
-        for (let i = 0; i < 6; i++) {
-          ctx.lineTo(
-            this.x + this.size * Math.cos((i * 2 * Math.PI) / 6),
-            this.y + this.size * Math.sin((i * 2 * Math.PI) / 6),
-          )
-        }
-        ctx.closePath()
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
         ctx.fillStyle = this.color
         ctx.fill()
       }
-
-      update() {
-        this.y += this.speed
-        if (this.y > canvas.height + this.size) {
-          this.y = -this.size
-          this.x = Math.random() * canvas.width
-        }
-      }
     }
 
-    const hexagons: Hexagon[] = []
-    for (let i = 0; i < 50; i++) {
-      hexagons.push(new Hexagon(Math.random() * canvas.width, Math.random() * canvas.height))
+    const particles: Particle[] = []
+    for (let i = 0; i < 100; i++) {
+      particles.push(new Particle())
     }
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      hexagons.forEach((hexagon) => {
-        hexagon.update()
-        hexagon.draw()
+      particles.forEach((particle) => {
+        particle.update()
+        particle.draw()
       })
       animationFrameId = requestAnimationFrame(animate)
     }
@@ -86,7 +84,7 @@ const FuturisticBackground: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full -z-10 bg-gradient-to-b from-gray-900 to-blue-900"
+      className="fixed top-0 left-0 w-full h-full -z-10 bg-gradient-to-b from-blue-900 to-black"
     />
   )
 }
