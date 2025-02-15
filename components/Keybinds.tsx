@@ -14,6 +14,10 @@ const keybinds = [
     ],
   },
   {
+    section: "Mods",
+    binds: [{ key: "F", action: "Cart anschließen" }],
+  },
+  {
     section: "Voice Chat",
     binds: [
       { key: "G", action: "Gruppen" },

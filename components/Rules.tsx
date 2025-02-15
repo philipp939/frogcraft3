@@ -5,9 +5,16 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Book } from "lucide-react"
 
 const rules = [
-  "Keine unerlaubten Mods oder Hackclients",
-  "Base griefen ist verboten",
-  "Spieler töten und deren Stuff behalten ist erlaubt",
+  "Respektiere alle Spieler",
+  "Kein Griefing oder Stehlen",
+  "Keine Cheats oder Hacks",
+  "Halte den Chat familienfreundlich",
+  "Melde Bugs an die Admins",
+  "Baue nicht zu nah an anderen Spielern ohne Erlaubnis",
+  "Nutze die vorgesehenen Bereiche für PvP",
+  "Folge den Anweisungen der Moderatoren",
+  "Keine Werbung für andere Server",
+  "Hab Spaß und sei kreativ!",
 ]
 
 export default function Rules() {

@@ -32,8 +32,8 @@ export default function AnimatedBackground() {
         this.x = Math.random() * canvas.width
         this.y = Math.random() * canvas.height
         this.size = Math.random() * 20 + 10
-        this.speedX = Math.random() * 3 - 1.5
-        this.speedY = Math.random() * 3 - 1.5
+        this.speedX = Math.random() * 2 - 1
+        this.speedY = Math.random() * 2 - 1
         this.item = minecraftItems[Math.floor(Math.random() * minecraftItems.length)]
       }
 
@@ -50,6 +50,7 @@ export default function AnimatedBackground() {
       draw() {
         if (!ctx) return
         ctx.font = `${this.size}px Arial`
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)"
         ctx.fillText(this.item, this.x, this.y)
       }
     }
