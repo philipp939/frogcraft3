@@ -14,8 +14,6 @@ const keybinds = [
     ],
   },
   {
- 
-  {
     section: "Voice Chat",
     binds: [
       { key: "G", action: "Gruppen" },
