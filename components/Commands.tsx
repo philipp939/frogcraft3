@@ -22,28 +22,12 @@ const commands = [
     description: "Setzt dein Zuhause an deiner aktuellen Position",
   },
   {
-    command: "/msg <spieler> <nachricht>",
-    description: "Sendet eine private Nachricht an einen Spieler",
-  },
-  {
-    command: "/rtp",
-    description: "Teleportiert dich an einen zufälligen Ort",
-  },
-  {
-    command: "/kit starter",
-    description: "Gibt dir das Starter-Kit (alle 24h verfügbar)",
-  },
-  {
-    command: "/shop",
-    description: "Öffnet den Server-Shop",
-  },
-  {
-    command: "/baltop",
+    command: "///////",
     description: "Zeigt die reichsten Spieler",
   },
   {
-    command: "/help",
-    description: "Zeigt alle verfügbaren Befehle",
+    command: "/balance",
+    description: "Zeigt dein Guthaben",
   },
 ]
 
