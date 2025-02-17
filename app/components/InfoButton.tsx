@@ -14,7 +14,7 @@ export default function InfoButton() {
         className="inline-flex items-center justify-center bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 w-full hover:scale-105 hover:shadow-lg text-base border border-yellow-400 backdrop-blur-sm bg-opacity-80"
       >
         <Info className="mr-2" />
-        Server Info
+        Informationen
       </button>
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Server Information">
         <div className="space-y-4 text-gray-300">
