@@ -2,7 +2,7 @@ import FuturisticBackground from "./components/FuturisticBackground"
 import CopyableIP from "./components/CopyableIP"
 import Countdown from "./components/Countdown"
 import ButtonGrid from "./components/ButtonGrid"
-import Impressum from "./components/Impressum"
+import SponsorButton from "./components/SponsorButton"
 
 export default function Home() {
   return (
@@ -17,7 +17,7 @@ export default function Home() {
           <ButtonGrid />
         </div>
         <div className="mt-8">
-          <Impressum />
+          <SponsorButton />
         </div>
       </div>
     </main>
