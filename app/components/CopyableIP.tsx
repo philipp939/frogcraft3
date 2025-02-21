@@ -46,7 +46,7 @@ export default function CopyableIP() {
           <div className="bg-gray-700 p-4 rounded-lg">
             <h3 className="text-lg font-semibold text-blue-400 mb-2">Hinweis:</h3>
             <p>Bitte benutze den Mod Simple Voice Chat, wenn du auf dem Server spielst!</p>
-          
+          </div>
         </div>
       </Modal>
     </div>
