@@ -2,7 +2,6 @@ import FuturisticBackground from "./components/FuturisticBackground"
 import CopyableIP from "./components/CopyableIP"
 import Countdown from "./components/Countdown"
 import ButtonGrid from "./components/ButtonGrid"
-import SponsorButton from "./components/SponsorButton"
 
 export default function Home() {
   return (
@@ -15,9 +14,6 @@ export default function Home() {
           <h2 className="text-xl sm:text-2xl font-semibold mb-4">Server Start in:</h2>
           <Countdown targetDate="2025-02-21T20:00:00" />
           <ButtonGrid />
-        </div>
-        <div className="mt-8">
-          <SponsorButton />
         </div>
       </div>
     </main>

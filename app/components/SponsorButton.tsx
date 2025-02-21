@@ -1,20 +1,16 @@
-"use client"
-
 import { Heart } from "lucide-react"
 
 export default function SponsorButton() {
-  const handleClick = () => {
-    window.open("https://discord.gg/Y2hyNvuHUm", "_blank")
-  }
-
   return (
-    <button
-      onClick={handleClick}
-      className="inline-flex items-center justify-center bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 text-sm"
+    <a
+      href="https://discord.gg/qjFtsYV46K"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center justify-center bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm border border-pink-400 backdrop-blur-sm bg-opacity-80"
     >
-      <Heart className="mr-2 h-4 w-4" />
+      <Heart className="mr-2 w-4 h-4" />
       Sponsor
-    </button>
+    </a>
   )
 }
 

@@ -2,15 +2,18 @@
 
 import { useState } from "react"
 import { Check, Copy, Server } from "lucide-react"
+import Modal from "./Modal"
 
 export default function CopyableIP() {
   const [copied, setCopied] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const displayIp = "NEXTGSP.com"
   const copyIp = "host1.nextgsp.com:25500"
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(copyIp).then(() => {
       setCopied(true)
+      setShowModal(true)
       setTimeout(() => setCopied(false), 2000)
     })
   }
@@ -33,6 +36,19 @@ export default function CopyableIP() {
         )}
       </button>
       <span className="text-sm text-gray-300">Klicke zum Kopieren</span>
+
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Server Information">
+        <div className="space-y-4 text-gray-300">
+          <div className="bg-gray-700 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold text-green-400 mb-2">Server Version:</h3>
+            <p>Minecraft 1.21</p>
+          </div>
+          <div className="bg-gray-700 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold text-blue-400 mb-2">Hinweis:</h3>
+            <p>Bitte benutze den Mod Simple Voice Chat, wenn du auf dem Server spielst!</p>
+          
+        </div>
+      </Modal>
     </div>
   )
 }
