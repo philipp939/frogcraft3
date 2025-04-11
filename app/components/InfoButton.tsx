@@ -11,9 +11,10 @@ export default function InfoButton() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center justify-center bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 w-full hover:scale-105 hover:shadow-lg text-base border border-yellow-400 backdrop-blur-sm bg-opacity-80"
+        className="inline-flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white font-medium py-4 px-6 rounded-lg transition-all duration-300 w-full border border-gray-700"
+        style={{ borderRadius: "0.5rem" }}
       >
-        <Info className="mr-2" />
+        <Info className="mr-2 text-yellow-400" />
         Server Info
       </button>
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Server Information">
@@ -45,7 +46,7 @@ export default function InfoButton() {
             </li>
           </ol>
           <div className="mt-6 p-4 bg-gray-700 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-300 mb-2">Empfehlung:</h3>
+            <h3 className="text-lg font-semibold text-blue-300 mb-2">Empfehlung:</h3>
             <p>Spiele mit dem Voice-Chat Mod für ein besseres Spielerlebnis.</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>

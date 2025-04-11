@@ -34,9 +34,10 @@ export default function CommandsButton() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 w-full hover:scale-105 hover:shadow-lg text-base border border-purple-400 backdrop-blur-sm bg-opacity-80"
+        className="inline-flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white font-medium py-4 px-6 rounded-lg transition-all duration-300 w-full border border-gray-700"
+        style={{ borderRadius: "0.5rem" }}
       >
-        <Terminal className="mr-2" />
+        <Terminal className="mr-2 text-purple-400" />
         Commands
       </button>
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Server Commands">

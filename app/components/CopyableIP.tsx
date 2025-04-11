@@ -15,12 +15,18 @@ export default function CopyableIP() {
   }
 
   return (
-    <button
-      onClick={copyToClipboard}
-      className="text-xl sm:text-2xl md:text-3xl font-semibold mb-4 text-white hover:text-gray-200 transition-colors duration-300 flex items-center gap-2 flex-wrap justify-center"
-    >
-      <span>Zukünftige Server IP: {ip}</span>
-      {copied ? <Check className="w-6 h-6 text-green-500" /> : <Copy className="w-6 h-6" />}
-    </button>
+    <div className="mb-6 text-center">
+      <div className="inline-flex items-center bg-gray-800 px-4 py-3 rounded-lg border border-gray-700">
+        <span className="text-xl font-medium mr-3">Zukünftige Server IP:</span>
+        <code className="bg-gray-900 px-3 py-1 rounded text-blue-300 font-mono">{ip}</code>
+        <button
+          onClick={copyToClipboard}
+          className="ml-3 p-2 rounded-md hover:bg-gray-700 transition-colors"
+          aria-label="IP-Adresse kopieren"
+        >
+          {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5 text-gray-400" />}
+        </button>
+      </div>
+    </div>
   )
 }
