@@ -129,9 +129,9 @@ export default function DefaultVersion() {
           {/* Server Info Button */}
           <button
             onClick={() => openModal("info")}
-            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-md transition-colors"
+            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-lg transition-colors"
           >
-            <div className="mr-3 text-yellow-500">
+            <div className="mr-3 text-yellow-500 bg-yellow-900/30 p-2 rounded-lg">
               <Info className="w-5 h-5" />
             </div>
             <span>Server Info</span>
@@ -140,9 +140,9 @@ export default function DefaultVersion() {
           {/* Rules Button */}
           <button
             onClick={() => openModal("rules")}
-            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-md transition-colors"
+            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-lg transition-colors"
           >
-            <div className="mr-3 text-green-500">
+            <div className="mr-3 text-green-500 bg-green-900/30 p-2 rounded-lg">
               <Book className="w-5 h-5" />
             </div>
             <span>Regeln</span>
@@ -151,9 +151,9 @@ export default function DefaultVersion() {
           {/* Commands Button */}
           <button
             onClick={() => openModal("commands")}
-            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-md transition-colors"
+            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-lg transition-colors"
           >
-            <div className="mr-3 text-purple-500">
+            <div className="mr-3 text-purple-500 bg-purple-900/30 p-2 rounded-lg">
               <Terminal className="w-5 h-5" />
             </div>
             <span>Commands</span>
@@ -162,9 +162,9 @@ export default function DefaultVersion() {
           {/* Keybinds Button */}
           <button
             onClick={() => openModal("keybinds")}
-            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-md transition-colors"
+            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-lg transition-colors"
           >
-            <div className="mr-3 text-blue-500">
+            <div className="mr-3 text-blue-500 bg-blue-900/30 p-2 rounded-lg">
               <Keyboard className="w-5 h-5" />
             </div>
             <span>Keybinds</span>
@@ -175,9 +175,9 @@ export default function DefaultVersion() {
             href="https://discord.gg/H2yX7d8Bmv"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center bg-indigo-600 hover:bg-indigo-700 p-4 rounded-md transition-colors"
+            className="flex items-center bg-indigo-600 hover:bg-indigo-700 p-4 rounded-lg transition-colors"
           >
-            <div className="mr-3 text-white">
+            <div className="mr-3 text-white bg-white/10 p-2 rounded-lg">
               <FaDiscord className="w-5 h-5" />
             </div>
             <span>Discord</span>
@@ -188,9 +188,9 @@ export default function DefaultVersion() {
             href="https://www.curseforge.com/minecraft/modpacks/frogcraft1"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-md transition-colors"
+            className="flex items-center bg-gray-800/80 hover:bg-gray-700/80 p-4 rounded-lg transition-colors"
           >
-            <div className="mr-3 text-orange-500">
+            <div className="mr-3 text-orange-500 bg-orange-900/30 p-2 rounded-lg">
               <Package className="w-5 h-5" />
             </div>
             <span>Modpack</span>
