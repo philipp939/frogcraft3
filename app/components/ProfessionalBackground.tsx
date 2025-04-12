@@ -22,7 +22,7 @@ export default function ProfessionalBackground() {
     window.addEventListener("resize", resizeCanvas)
     resizeCanvas()
 
-    // Hexagon grid background
+    // Hexagon grid background with subtle animation
     class Hexagon {
       x: number
       y: number
@@ -30,20 +30,24 @@ export default function ProfessionalBackground() {
       opacity: number
       pulseDirection: number
       pulseSpeed: number
+      rotation: number
+      rotationSpeed: number
 
       constructor(x: number, y: number, size: number) {
         this.x = x
         this.y = y
         this.size = size
-        this.opacity = Math.random() * 0.2 + 0.1
+        this.opacity = Math.random() * 0.15 + 0.05
         this.pulseDirection = Math.random() > 0.5 ? 1 : -1
-        this.pulseSpeed = Math.random() * 0.005 + 0.002
+        this.pulseSpeed = Math.random() * 0.003 + 0.001
+        this.rotation = Math.random() * Math.PI * 2
+        this.rotationSpeed = (Math.random() * 0.0005 + 0.0001) * (Math.random() > 0.5 ? 1 : -1)
       }
 
       draw(ctx: CanvasRenderingContext2D) {
         ctx.beginPath()
         for (let i = 0; i < 6; i++) {
-          const angle = (Math.PI / 3) * i
+          const angle = this.rotation + (Math.PI / 3) * i
           const x = this.x + this.size * Math.cos(angle)
           const y = this.y + this.size * Math.sin(angle)
           if (i === 0) {
@@ -60,9 +64,10 @@ export default function ProfessionalBackground() {
 
       update() {
         this.opacity += this.pulseDirection * this.pulseSpeed
-        if (this.opacity > 0.3 || this.opacity < 0.1) {
+        if (this.opacity > 0.2 || this.opacity < 0.05) {
           this.pulseDirection *= -1
         }
+        this.rotation += this.rotationSpeed
       }
     }
 

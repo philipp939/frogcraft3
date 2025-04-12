@@ -66,6 +66,14 @@ const FuturisticBackground: React.FC = () => {
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Draw gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+      gradient.addColorStop(0, "#1e3a8a") // blue-900
+      gradient.addColorStop(1, "#172554") // blue-950
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
       particles.forEach((particle) => {
         particle.update()
         particle.draw()
@@ -81,12 +89,7 @@ const FuturisticBackground: React.FC = () => {
     }
   }, [])
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full -z-10 bg-gradient-to-b from-blue-900 to-black"
-    />
-  )
+  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full -z-10" />
 }
 
 export default FuturisticBackground

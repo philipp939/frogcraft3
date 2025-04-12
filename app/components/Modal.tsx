@@ -1,6 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
+import { X } from "lucide-react"
 import type React from "react"
 
 interface ModalProps {
@@ -15,27 +16,37 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/50"
+          onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70"
         >
           <motion.div
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -50, opacity: 0 }}
-            className="bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-700 shadow-xl"
-            style={{ borderRadius: "0.5rem" }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-2xl font-bold mb-4 text-blue-300">{title}</h2>
-            {children}
-            <button
-              onClick={onClose}
-              className="mt-6 bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded transition-colors duration-300 border border-gray-600"
-              style={{ borderRadius: "0.375rem" }}
-            >
-              Schließen
-            </button>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-gray-100">{title}</h2>
+              <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700 transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="mb-6">{children}</div>
+
+            <div className="mt-8 text-right">
+              <button
+                onClick={onClose}
+                className="px-5 py-2.5 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-200 transition-colors font-medium"
+              >
+                Schließen
+              </button>
+            </div>
           </motion.div>
         </motion.div>
       )}

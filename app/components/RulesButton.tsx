@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Book } from "lucide-react"
+import { motion } from "framer-motion"
 import Modal from "./Modal"
 
 const rules = [
@@ -13,20 +14,36 @@ const rules = [
 export default function RulesButton() {
   const [isOpen, setIsOpen] = useState(false)
 
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  }
+
   return (
     <>
-      <button
+      <motion.button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white font-medium py-4 px-6 rounded-lg transition-all duration-300 w-full border border-gray-700"
-        style={{ borderRadius: "0.5rem" }}
+        className="flex flex-col items-center justify-center bg-gray-900 p-8 rounded-3xl border border-gray-800 shadow-md shadow-black/50 hover:shadow-lg hover:shadow-black/60 transition-all duration-300 text-center h-full"
+        variants={item}
+        whileHover={{ y: -5 }}
+        whileTap={{ scale: 0.98 }}
       >
-        <Book className="mr-2 text-green-400" />
-        Regeln
-      </button>
+        <div className="bg-green-900/30 p-4 rounded-full mb-4">
+          <Book className="w-8 h-8 text-green-400" />
+        </div>
+        <h3 className="text-xl font-medium text-gray-200 mb-2">Regeln</h3>
+        <p className="text-gray-500 text-sm">Erfahre die Serverregeln</p>
+      </motion.button>
+
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Serverregeln">
-        <ul className="list-disc list-inside space-y-2 text-gray-300">
+        <ul className="space-y-4 text-gray-300">
           {rules.map((rule, index) => (
-            <li key={index}>{rule}</li>
+            <li key={index} className="flex items-start">
+              <span className="inline-flex items-center justify-center bg-green-900/30 text-green-400 rounded-full w-6 h-6 text-sm mr-3 flex-shrink-0 mt-0.5">
+                {index + 1}
+              </span>
+              <span>{rule}</span>
+            </li>
           ))}
         </ul>
       </Modal>

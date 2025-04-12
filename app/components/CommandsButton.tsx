@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Terminal } from "lucide-react"
+import { motion } from "framer-motion"
 import Modal from "./Modal"
 
 const commands = [
@@ -30,22 +31,33 @@ const commands = [
 export default function CommandsButton() {
   const [isOpen, setIsOpen] = useState(false)
 
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  }
+
   return (
     <>
-      <button
+      <motion.button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white font-medium py-4 px-6 rounded-lg transition-all duration-300 w-full border border-gray-700"
-        style={{ borderRadius: "0.5rem" }}
+        className="flex flex-col items-center justify-center bg-gray-900 p-8 rounded-3xl border border-gray-800 shadow-md shadow-black/50 hover:shadow-lg hover:shadow-black/60 transition-all duration-300 text-center h-full"
+        variants={item}
+        whileHover={{ y: -5 }}
+        whileTap={{ scale: 0.98 }}
       >
-        <Terminal className="mr-2 text-purple-400" />
-        Commands
-      </button>
+        <div className="bg-purple-900/30 p-4 rounded-full mb-4">
+          <Terminal className="w-8 h-8 text-purple-400" />
+        </div>
+        <h3 className="text-xl font-medium text-gray-200 mb-2">Commands</h3>
+        <p className="text-gray-500 text-sm">Nützliche Server-Befehle</p>
+      </motion.button>
+
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Server Commands">
-        <div className="grid gap-3">
+        <div className="space-y-4">
           {commands.map((cmd, index) => (
-            <div key={index} className="bg-gray-700 bg-opacity-50 p-3 rounded-lg">
-              <code className="text-green-400 font-mono">{cmd.command}</code>
-              <p className="text-gray-300 mt-1">{cmd.description}</p>
+            <div key={index} className="bg-gray-800 p-4 rounded-xl border border-gray-700">
+              <code className="text-purple-400 font-mono text-base block mb-2">{cmd.command}</code>
+              <p className="text-gray-300">{cmd.description}</p>
             </div>
           ))}
         </div>
