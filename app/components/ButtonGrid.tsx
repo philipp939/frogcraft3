@@ -8,11 +8,7 @@ import KeybindsButton from "./KeybindsButton"
 import DiscordButton from "./DiscordButton"
 import ModpackButton from "./ModpackButton"
 
-interface ButtonGridProps {
-  theme: "light" | "dark"
-}
-
-export default function ButtonGrid({ theme }: ButtonGridProps) {
+export default function ButtonGrid() {
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -31,12 +27,12 @@ export default function ButtonGrid({ theme }: ButtonGridProps) {
       whileInView="show"
       viewport={{ once: true, margin: "-100px" }}
     >
-      <InfoButton theme={theme} />
-      <RulesButton theme={theme} />
-      <CommandsButton theme={theme} />
-      <KeybindsButton theme={theme} />
-      <DiscordButton theme={theme} />
-      <ModpackButton theme={theme} />
+      <InfoButton />
+      <RulesButton />
+      <CommandsButton />
+      <KeybindsButton />
+      <DiscordButton />
+      <ModpackButton />
     </motion.div>
   )
 }

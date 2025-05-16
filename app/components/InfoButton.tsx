@@ -5,11 +5,7 @@ import { Info } from "lucide-react"
 import { motion } from "framer-motion"
 import Modal from "./Modal"
 
-interface InfoButtonProps {
-  theme: "light" | "dark"
-}
-
-export default function InfoButton({ theme }: InfoButtonProps) {
+export default function InfoButton() {
   const [isOpen, setIsOpen] = useState(false)
 
   const item = {
@@ -21,26 +17,20 @@ export default function InfoButton({ theme }: InfoButtonProps) {
     <>
       <motion.button
         onClick={() => setIsOpen(true)}
-        className={`flex flex-col items-center justify-center p-8 rounded-3xl border transition-all duration-300 text-center h-full ${
-          theme === "dark"
-            ? "bg-gray-900 border-gray-800 shadow-md shadow-black/50 hover:shadow-lg hover:shadow-black/60"
-            : "bg-white border-gray-200 shadow-sm hover:shadow-md"
-        }`}
+        className="flex flex-col items-center justify-center p-8 rounded-3xl border transition-all duration-300 text-center h-full bg-gray-900 border-gray-800 shadow-md shadow-black/50 hover:shadow-lg hover:shadow-black/60"
         variants={item}
         whileHover={{ y: -5 }}
         whileTap={{ scale: 0.98 }}
       >
-        <div className={`p-4 rounded-full mb-4 ${theme === "dark" ? "bg-yellow-900/30" : "bg-yellow-50"}`}>
-          <Info className={`w-8 h-8 ${theme === "dark" ? "text-yellow-400" : "text-yellow-600"}`} />
+        <div className="p-4 rounded-full mb-4 bg-yellow-900/30">
+          <Info className="w-8 h-8 text-yellow-400" />
         </div>
-        <h3 className={`text-xl font-medium mb-2 ${theme === "dark" ? "text-gray-200" : "text-gray-900"}`}>
-          Server Info
-        </h3>
+        <h3 className="text-xl font-medium mb-2 text-gray-200">Server Info</h3>
         <p className="text-gray-500 text-sm">Wichtige Informationen</p>
       </motion.button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Server Information" theme={theme}>
-        <div className={`space-y-6 ${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Server Information">
+        <div className="space-y-6 text-gray-300">
           <p>Um auf den Server joinen zu können, musst du folgende Schritte befolgen:</p>
 
           <ol className="space-y-4 list-decimal list-inside ml-4">
@@ -50,9 +40,7 @@ export default function InfoButton({ theme }: InfoButtonProps) {
                 href="https://discord.gg/H2yX7d8Bmv"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`font-medium ${
-                  theme === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-800"
-                } transition-colors`}
+                className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Discord-Server
               </a>{" "}
@@ -61,31 +49,18 @@ export default function InfoButton({ theme }: InfoButtonProps) {
             <li>Gehe in den #whitelist-Channel.</li>
             <li>
               Verlinke deinen Discord-Account mit deinem Minecraft-Account, indem du den Befehl{" "}
-              <code
-                className={`px-2 py-1 rounded-md font-mono ${
-                  theme === "dark" ? "bg-gray-800 text-gray-300" : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                /link
-              </code>{" "}
-              verwendest.
+              <code className="px-2 py-1 rounded-md font-mono bg-gray-800 text-gray-300">/link</code> verwendest.
             </li>
             <li>
               Wähle im Discord im Channel #pvp aus ob du mit oder ohne PVP spielen möchtest.
-              <p className={`mt-2 font-medium ${theme === "dark" ? "text-yellow-400" : "text-yellow-600"}`}>
+              <p className="mt-2 font-medium text-yellow-400">
                 Achtung: Du riskierst damit deinen Stuff zu verlieren wenn du getötet wirst!
               </p>
             </li>
           </ol>
 
-          <div
-            className={`mt-8 p-6 rounded-xl border ${
-              theme === "dark" ? "bg-gray-800 border-gray-700" : "bg-gray-50 border-gray-200"
-            }`}
-          >
-            <h3 className={`text-lg font-medium mb-3 ${theme === "dark" ? "text-gray-100" : "text-gray-900"}`}>
-              Empfehlung:
-            </h3>
+          <div className="mt-8 p-6 rounded-xl border bg-gray-800 border-gray-700">
+            <h3 className="text-lg font-medium mb-3 text-gray-100">Empfehlung:</h3>
             <p>Spiele mit dem Voice-Chat Mod für ein besseres Spielerlebnis.</p>
             <ul className="list-disc list-inside mt-3 space-y-2 ml-4">
               <li>
@@ -94,9 +69,7 @@ export default function InfoButton({ theme }: InfoButtonProps) {
                   href="https://www.curseforge.com/minecraft/mc-mods/simple-voice-chat"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`font-medium ${
-                    theme === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-800"
-                  } transition-colors`}
+                  className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
                 >
                   Simple Voice Chat Mod
                 </a>{" "}
@@ -108,9 +81,7 @@ export default function InfoButton({ theme }: InfoButtonProps) {
                   href="https://www.curseforge.com/minecraft/modpacks/frogcraft1"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`font-medium ${
-                    theme === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-800"
-                  } transition-colors`}
+                  className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
                 >
                   vorgefertigtes Modpack
                 </a>

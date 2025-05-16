@@ -8,10 +8,10 @@ interface CountdownProps {
 
 export default function Countdown({ targetDate }: CountdownProps) {
   const [timeLeft, setTimeLeft] = useState({
-    Tage: 0,
-    Stunden: 0,
-    Minuten: 0,
-    Sekunden: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
   })
 
   useEffect(() => {
@@ -22,13 +22,14 @@ export default function Countdown({ targetDate }: CountdownProps) {
 
       if (difference > 0) {
         setTimeLeft({
-          Tage: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          Stunden: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          Minuten: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-          Sekunden: Math.floor((difference % (1000 * 60)) / 1000),
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((difference % (1000 * 60)) / 1000),
         })
       } else {
         clearInterval(interval)
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
       }
     }, 1000)
 
@@ -36,13 +37,13 @@ export default function Countdown({ targetDate }: CountdownProps) {
   }, [targetDate])
 
   return (
-    <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
+    <div className="flex justify-center space-x-4">
       {Object.entries(timeLeft).map(([unit, value]) => (
         <div key={unit} className="flex flex-col items-center">
-          <div className="bg-blue-500 bg-opacity-50 rounded-lg p-2 sm:p-4 backdrop-blur-sm w-16 sm:w-24 h-16 sm:h-24 flex items-center justify-center">
-            <span className="text-2xl sm:text-4xl font-bold text-white">{value.toString().padStart(2, "0")}</span>
+          <div className="bg-gray-800 rounded-lg p-3 w-20 h-20 flex items-center justify-center border border-gray-700">
+            <span className="text-2xl font-bold">{value.toString().padStart(2, "0")}</span>
           </div>
-          <div className="text-xs sm:text-sm mt-2 text-white">{unit}</div>
+          <div className="text-xs mt-2 text-gray-400 capitalize">{unit}</div>
         </div>
       ))}
     </div>

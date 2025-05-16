@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 255, 255, 255;
+  --foreground-rgb: 255, 255, 255;
+  --background-rgb: 17, 24, 39;
 }
 
 html {
@@ -26,29 +26,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(240, 240, 240, 0.8);
+  background: rgba(30, 30, 30, 0.8);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(180, 180, 180, 0.8);
+  background: rgba(80, 80, 80, 0.8);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(150, 150, 150, 0.8);
-}
-
-/* Dark mode scrollbar */
-.dark-scrollbar::-webkit-scrollbar-track {
-  background: rgba(30, 30, 30, 0.8);
-}
-
-.dark-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(80, 80, 80, 0.8);
-}
-
-.dark-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 100, 100, 0.8);
 }
 
@@ -62,21 +49,4 @@ a:focus {
 button:focus:not(:focus-visible),
 a:focus:not(:focus-visible) {
   outline: none;
-}
-
-/* Animation for logo */
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
 }
