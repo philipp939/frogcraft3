@@ -1,0 +1,14 @@
+name: FrogCraftManager
+version: 1.0.0
+main: de.frogcraft.manager.FrogCraftManager
+api-version: 1.19
+description: Verwaltet Spielereinstellungen und Statistiken für den FrogCraft-Server
+commands:
+  settings:
+    description: Zeigt die URL für die Spielereinstellungen an
+    usage: /settings
+    aliases: [einstellungen, config]
+  requests:
+    description: Verwaltet ausstehende Aktionsanfragen
+    usage: /requests [accept|reject] [id]
+    aliases: [anfragen, actions]
