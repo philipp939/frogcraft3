@@ -1,86 +1,52 @@
-// app/api/pvp/route.ts
-import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"
+import fs from "fs"
+import path from "path"
 
-// Supabase Initialisierung
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const apiSecret = process.env.API_SECRET_KEY;
+// Konfiguration - diese Werte solltest du in einer .env-Datei speichern
+const MINECRAFT_SERVER_PATH = process.env.MINECRAFT_SERVER_PATH || "./minecraft-server"
+const PVP_PLAYERS_PATH = path.join(MINECRAFT_SERVER_PATH, "pvp_players.json")
 
-if (!supabaseUrl || !supabaseKey || !apiSecret) {
-  throw new Error("Supabase oder API-Konfiguration fehlt in .env.local");
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// POST /api/pvp – Spieler registrieren
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { username } = body;
+    // Lese den Request-Body
+    const body = await request.json()
+    const { username } = body
 
+    // Validiere die Eingaben
     if (!username) {
-      return NextResponse.json({ error: "Minecraft-Benutzername fehlt." }, { status: 400 });
+      return NextResponse.json({ error: "Minecraft-Benutzername ist erforderlich" }, { status: 400 })
     }
 
-    const cleanName = username.trim().toLowerCase();
-
-    const { data: existing, error: selectError } = await supabase
-      .from("pvp_players")
-      .select("username")
-      .eq("username", cleanName)
-      .single();
-
-    if (selectError && selectError.code !== "PGRST116") {
-      // Fehler beim Abfragen (außer "not found")
-      console.error("Supabase SELECT-Fehler:", selectError);
-      return NextResponse.json({ error: "Fehler beim Abfragen der Datenbank." }, { status: 500 });
+    // Stelle sicher, dass das Verzeichnis existiert
+    if (!fs.existsSync(MINECRAFT_SERVER_PATH)) {
+      fs.mkdirSync(MINECRAFT_SERVER_PATH, { recursive: true })
     }
 
-    if (existing) {
-      return NextResponse.json({ error: "PVP ist bereits aktiviert." }, { status: 409 });
+    // Erstelle die pvp_players.json, falls sie nicht existiert
+    if (!fs.existsSync(PVP_PLAYERS_PATH)) {
+      fs.writeFileSync(PVP_PLAYERS_PATH, JSON.stringify([], null, 2))
     }
 
-    const { error: insertError } = await supabase
-      .from("pvp_players")
-      .insert([{ username: cleanName, activated_at: new Date().toISOString() }]);
+    // Lese die aktuelle PVP-Spielerliste
+    const pvpPlayersContent = fs.readFileSync(PVP_PLAYERS_PATH, "utf-8")
+    const pvpPlayers = JSON.parse(pvpPlayersContent)
 
-    if (insertError) {
-      console.error("Supabase INSERT-Fehler:", insertError);
-      return NextResponse.json({ error: "Spieler konnte nicht gespeichert werden." }, { status: 500 });
+    // Überprüfe, ob der Spieler bereits PVP aktiviert hat
+    if (pvpPlayers.some((player: string) => player.toLowerCase() === username.toLowerCase())) {
+      return NextResponse.json({ error: "PVP ist bereits für diesen Spieler aktiviert" }, { status: 400 })
     }
 
-    return NextResponse.json({ message: "PVP wurde erfolgreich aktiviert." });
-  } catch (err) {
-    console.error("Fehler in POST /api/pvp:", err);
-    return NextResponse.json({ error: "Interner Serverfehler." }, { status: 500 });
-  }
-}
+    // Füge den Spieler zur PVP-Liste hinzu
+    pvpPlayers.push(username)
+    fs.writeFileSync(PVP_PLAYERS_PATH, JSON.stringify(pvpPlayers, null, 2))
 
-// GET /api/pvp?key=...
-export async function GET(request: Request) {
-  try {
-    const url = new URL(request.url);
-    const key = url.searchParams.get("key");
+    console.log(`PVP aktiviert für Spieler: ${username}`)
 
-    if (key !== apiSecret) {
-      return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
-    }
-
-    const { data, error } = await supabase
-      .from("pvp_players")
-      .select("username");
-
-    if (error) {
-      console.error("Supabase SELECT-Fehler:", error);
-      return NextResponse.json({ error: "Fehler beim Laden der Spieler." }, { status: 500 });
-    }
-
-    const usernames = data.map(player => player.username);
-
-    return NextResponse.json({ players: usernames });
-  } catch (err) {
-    console.error("Fehler in GET /api/pvp:", err);
-    return NextResponse.json({ error: "Interner Serverfehler." }, { status: 500 });
+    return NextResponse.json({
+      message: "PVP wurde erfolgreich für deinen Account aktiviert!",
+    })
+  } catch (error) {
+    console.error("Fehler bei der PVP-Aktivierung:", error)
+    return NextResponse.json({ error: "Ein Fehler ist aufgetreten" }, { status: 500 })
   }
 }
