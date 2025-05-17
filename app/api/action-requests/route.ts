@@ -2,29 +2,28 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from "next/server";
 
-// Prüfe, ob die notwendigen Umgebungsvariablen gesetzt sind
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-const apiSecretKey = process.env.API_SECRET_KEY;
+function getSupabaseClient() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("SUPABASE_URL und SUPABASE_KEY müssen als Umgebungsvariablen gesetzt sein.");
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("SUPABASE_URL und SUPABASE_KEY müssen als Umgebungsvariablen gesetzt sein.");
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
 }
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { username } = body;
+    const { username } = await request.json();
 
     if (!username) {
       return NextResponse.json({ error: "Minecraft-Benutzername ist erforderlich." }, { status: 400 });
     }
 
+    const supabase = getSupabaseClient();
     const lowerUsername = username.toLowerCase();
 
-    // Überprüfe, ob der Spieler bereits existiert
     const { data: existingPlayer, error: selectError } = await supabase
       .from('pvp_players')
       .select()
@@ -32,12 +31,12 @@ export async function POST(request: Request) {
       .single();
 
     if (selectError && selectError.code !== 'PGRST116') {
-      console.error("Fehler beim Abrufen des Spielers:", selectError);
+      console.error("Fehler beim Abrufen:", selectError);
       return NextResponse.json({ error: "Fehler beim Überprüfen des Spielers." }, { status: 500 });
     }
 
     if (existingPlayer) {
-      return NextResponse.json({ error: "PVP ist bereits für diesen Spieler aktiviert." }, { status: 400 });
+      return NextResponse.json({ error: "PVP ist bereits aktiviert." }, { status: 400 });
     }
 
     const { error: insertError } = await supabase.from('pvp_players').insert([
@@ -49,32 +48,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Fehler beim Aktivieren von PVP." }, { status: 500 });
     }
 
-    console.log(`PVP aktiviert für Spieler: ${lowerUsername}`);
-    return NextResponse.json({
-      message: "PVP wurde erfolgreich für deinen Account aktiviert!"
-    });
+    return NextResponse.json({ message: "PVP wurde erfolgreich aktiviert!" });
 
   } catch (error) {
-    console.error("Allgemeiner Fehler:", error);
+    console.error("Fehler in POST:", error);
     return NextResponse.json({ error: "Ein unerwarteter Fehler ist aufgetreten." }, { status: 500 });
   }
 }
 
 export async function GET(request: Request) {
   try {
-    const url = new URL(request.url);
-    const apiKey = url.searchParams.get('key');
+    const apiKey = new URL(request.url).searchParams.get('key');
 
-    if (!apiKey || apiKey !== apiSecretKey) {
+    if (!apiKey || apiKey !== process.env.API_SECRET_KEY) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
     }
+
+    const supabase = getSupabaseClient();
 
     const { data: pvpPlayers, error } = await supabase
       .from('pvp_players')
       .select('username');
 
     if (error) {
-      console.error("Fehler beim Abrufen der Spieler:", error);
+      console.error("Fehler beim Abrufen:", error);
       return NextResponse.json({ error: "Fehler beim Laden der Spieler." }, { status: 500 });
     }
 
@@ -83,8 +80,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error("Allgemeiner Fehler beim GET:", error);
+    console.error("Fehler in GET:", error);
     return NextResponse.json({ error: "Ein unerwarteter Fehler ist aufgetreten." }, { status: 500 });
   }
 }
-
