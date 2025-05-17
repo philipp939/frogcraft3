@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { createClientSupabaseClient } from "@/lib/supabase"
+import { createClientSupabaseClient } from "../../lib/supabase"
 import { useRouter } from "next/navigation"
 
 export default function LoginPage() {

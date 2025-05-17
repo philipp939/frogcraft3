@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createServerSupabaseClient } from "../../../../lib/supabase"
 
 // GET: Ausstehende Aktionsanfragen für einen Spieler abrufen
 export async function GET(request: Request) {
