@@ -1,211 +1,181 @@
-import { createServerSupabaseClient } from "../../lib/supabase"
-import { redirect } from "next/navigation"
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { ArrowLeft, Loader2, Check, X } from "lucide-react"
+import { createClientSupabaseClient } from "@/lib/supabase"
 
-export default async function AdminPage() {
-  const supabase = createServerSupabaseClient()
+interface Player {
+  id: string
+  username: string
+  created_at: string
+  last_login: string | null
+  pvp_enabled?: boolean
+  verified?: boolean
+}
 
-  // Authentifizierung prüfen
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+export default function AdminPage() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [players, setPlayers] = useState<Player[]>([])
+  const router = useRouter()
+  const supabase = createClientSupabaseClient()
 
-  if (!session) {
-    redirect("/login")
-  }
+  // Lade Spielerdaten aus der Datenbank
+  useEffect(() => {
+    const loadPlayers = async () => {
+      try {
+        setIsLoading(true)
 
-  // Moderator-Berechtigung prüfen
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", session.user.id)
-    .in("role", ["moderator", "admin"])
+        // Lade Spieler aus der Datenbank
+        const { data: playersData, error: playersError } = await supabase.from("players").select("*").order("username")
 
-  if (!roles || roles.length === 0) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4">
-        <div className="max-w-md w-full bg-gray-800 rounded-lg border border-gray-700 p-6">
-          <h1 className="text-2xl font-bold mb-4 text-red-400">Zugriff verweigert</h1>
-          <p className="text-gray-300 mb-6">Du hast keine Berechtigung, auf den Admin-Bereich zuzugreifen.</p>
-          <Link
-            href="/"
-            className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            Zurück zur Startseite
-          </Link>
-        </div>
-      </div>
-    )
-  }
+        if (playersError) {
+          console.error("Fehler beim Laden der Spieler:", playersError)
+          return
+        }
 
-  // Admin-Daten abrufen
-  const response = await fetch(`${process.env.NEXT_PUBLIC_VERCEL_URL || "http://localhost:3000"}/api/admin`, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
+        // Lade Spielereinstellungen
+        const { data: settingsData, error: settingsError } = await supabase
+          .from("player_settings")
+          .select("username, pvp_enabled, verified")
 
-  if (!response.ok) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4">
-        <div className="max-w-md w-full bg-gray-800 rounded-lg border border-gray-700 p-6">
-          <h1 className="text-2xl font-bold mb-4 text-red-400">Fehler</h1>
-          <p className="text-gray-300 mb-6">Die Admin-Daten konnten nicht abgerufen werden.</p>
-          <Link
-            href="/"
-            className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            Zurück zur Startseite
-          </Link>
-        </div>
-      </div>
-    )
-  }
+        if (settingsError && settingsError.code !== "PGRST116") {
+          console.error("Fehler beim Laden der Einstellungen:", settingsError)
+        }
 
-  const { players, pendingSettings, logs } = await response.json()
+        // Kombiniere Spieler mit ihren Einstellungen
+        const playersWithSettings = playersData.map((player: Player) => {
+          const settings = settingsData?.find((s: any) => s.username.toLowerCase() === player.username.toLowerCase())
+          return {
+            ...player,
+            pvp_enabled: settings?.pvp_enabled || false,
+            verified: settings?.verified || false,
+          }
+        })
+
+        setPlayers(playersWithSettings)
+      } catch (error) {
+        console.error("Fehler beim Laden der Daten:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadPlayers()
+  }, [supabase])
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       <main className="flex-grow p-4">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <Link
-              href="/"
-              className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
+            <Link href="/" className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors">
+              <ArrowLeft className="w-5 h-5 mr-2" />
               Zurück zur Startseite
             </Link>
           </div>
 
-          <h1 className="text-3xl font-bold mb-8">Admin-Bereich</h1>
+          <h1 className="text-3xl font-bold mb-8">Moderator-Bereich</h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Spieler ({players.length})</h2>
-              <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 h-[400px] overflow-y-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-700">
-                      <th className="text-left py-2">Benutzername</th>
-                      <th className="text-left py-2">Registriert am</th>
-                      <th className="text-left py-2">Letzter Login</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {players.map((player: any) => (
-                      <tr key={player.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                        <td className="py-2">
-                          <Link
-                            href={`/player/${encodeURIComponent(player.username)}`}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                          >
-                            {player.username}
-                          </Link>
-                        </td>
-                        <td className="py-2">{new Date(player.created_at).toLocaleDateString("de-DE")}</td>
-                        <td className="py-2">
-                          {player.last_login ? new Date(player.last_login).toLocaleDateString("de-DE") : "Nie"}
-                        </td>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-8">
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Spieler ({players.length})</h2>
+                <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-700/50">
+                        <th className="text-left py-3 px-4 font-medium">Benutzername</th>
+                        <th className="text-left py-3 px-4 font-medium">Registriert am</th>
+                        <th className="text-left py-3 px-4 font-medium">Letzter Login</th>
+                        <th className="text-left py-3 px-4 font-medium">PVP</th>
+                        <th className="text-left py-3 px-4 font-medium">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {players.map((player) => (
+                        <tr key={player.id} className="border-t border-gray-700 hover:bg-gray-700/30">
+                          <td className="py-3 px-4">{player.username}</td>
+                          <td className="py-3 px-4">
+                            {player.created_at
+                              ? new Date(player.created_at).toLocaleString("de-DE", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "Unbekannt"}
+                          </td>
+                          <td className="py-3 px-4">
+                            {player.last_login
+                              ? new Date(player.last_login).toLocaleString("de-DE", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "Nie"}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`inline-block px-2 py-1 rounded-full text-xs ${
+                                player.pvp_enabled ? "bg-green-900/50 text-green-300" : "bg-red-900/50 text-red-300"
+                              }`}
+                            >
+                              {player.pvp_enabled ? "Aktiviert" : "Deaktiviert"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            {player.pvp_enabled ? (
+                              player.verified ? (
+                                <div className="flex items-center text-green-400">
+                                  <Check className="w-4 h-4 mr-1" />
+                                  <span>Verifiziert</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center text-yellow-400">
+                                  <X className="w-4 h-4 mr-1" />
+                                  <span>Nicht verifiziert</span>
+                                </div>
+                              )
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Gebannte Spieler</h2>
+                <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                  <p className="text-gray-400">Keine gebannten Spieler gefunden.</p>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Chat-Protokoll</h2>
+                <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                  <p className="text-gray-400">Diese Funktion wird in einer zukünftigen Version verfügbar sein.</p>
+                </div>
               </div>
             </div>
-
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Ausstehende Genehmigungen ({pendingSettings.length})</h2>
-              <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 h-[400px] overflow-y-auto">
-                {pendingSettings.length === 0 ? (
-                  <p className="text-gray-400">Keine ausstehenden Genehmigungen.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {pendingSettings.map((setting: any) => (
-                      <div key={setting.id} className="p-4 bg-gray-700 rounded-lg">
-                        <div className="flex justify-between mb-2">
-                          <span className="font-medium">{setting.players.username}</span>
-                          <span className="text-sm text-gray-400">
-                            {new Date(setting.updated_at).toLocaleString("de-DE")}
-                          </span>
-                        </div>
-                        <p className="mb-4">
-                          Möchte <span className="font-medium">{setting.setting_name}</span> auf{" "}
-                          <span className={setting.setting_value ? "text-green-400" : "text-red-400"}>
-                            {setting.setting_value ? "Aktiviert" : "Deaktiviert"}
-                          </span>{" "}
-                          setzen.
-                        </p>
-                        <div className="flex space-x-2">
-                          <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
-                            Genehmigen
-                          </button>
-                          <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
-                            Ablehnen
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">Server-Logs</h2>
-            <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 h-[400px] overflow-y-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-left py-2">Zeitpunkt</th>
-                    <th className="text-left py-2">Typ</th>
-                    <th className="text-left py-2">Spieler</th>
-                    <th className="text-left py-2">Nachricht</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map((log: any) => (
-                    <tr key={log.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                      <td className="py-2 whitespace-nowrap">{new Date(log.created_at).toLocaleString("de-DE")}</td>
-                      <td className="py-2">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs ${
-                            log.log_type === "error"
-                              ? "bg-red-900/50 text-red-300"
-                              : log.log_type === "warning"
-                                ? "bg-yellow-900/50 text-yellow-300"
-                                : log.log_type === "success"
-                                  ? "bg-green-900/50 text-green-300"
-                                  : "bg-blue-900/50 text-blue-300"
-                          }`}
-                        >
-                          {log.log_type}
-                        </span>
-                      </td>
-                      <td className="py-2">
-                        {log.players ? (
-                          <Link
-                            href={`/player/${encodeURIComponent(log.players.username)}`}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                          >
-                            {log.players.username}
-                          </Link>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="py-2">{log.message}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          )}
         </div>
       </main>
 
       <footer className="py-6 text-center text-gray-500">
-        <p>© {new Date().getFullYear()} Minecraft Server Management</p>
+        <p>© {new Date().getFullYear()} FrogCraft Minecraft Server</p>
       </footer>
     </div>
   )

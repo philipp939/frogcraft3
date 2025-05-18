@@ -1,31 +1,125 @@
-import PlayerSearch from "./components/PlayerSearch"
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { Loader2 } from "lucide-react"
+import PlayerSettings from "./components/PlayerSettings"
+import ProfessionalBackground from "./components/ProfessionalBackground"
+import ModeratorLogin from "./components/ModeratorLogin"
+import Countdown from "./components/Countdown"
+
+// Importiere die benötigten Komponenten
+import Header from "./components/Header"
+import CopyableIP from "./components/CopyableIP"
+import ButtonGrid from "./components/ButtonGrid"
 
 export default function Home() {
+  const [username, setUsername] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
+  const [showModLogin, setShowModLogin] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!username) {
+      setError("Bitte gib deinen Minecraft-Namen ein.")
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Hier könnten wir prüfen, ob der Spieler existiert
+      // Für jetzt gehen wir davon aus, dass jeder Spielername gültig ist
+      setShowSettings(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
-      <main className="flex-grow flex flex-col items-center justify-center p-4">
-        <div className="max-w-4xl w-full mx-auto text-center">
-          <h1 className="text-4xl font-bold mb-6">Minecraft Server Management</h1>
+    <div className="min-h-screen flex flex-col bg-gray-900 text-white relative">
+      <ProfessionalBackground />
 
-          <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-            Gib deinen Minecraft-Benutzernamen ein, um deine Einstellungen anzuzeigen und zu verwalten.
-          </p>
+      <main className="flex-grow flex flex-col items-center justify-center z-10">
+        <div className="w-full max-w-md mx-auto px-4">
+          {/* Header-Bereich */}
+          <div className="mb-4 text-center">
+            <Header />
+            <CopyableIP />
+            <Countdown />
+          </div>
 
-          <PlayerSearch />
+          {/* Spieler-Einstellungen Bereich */}
+          <div className="bg-gray-800/80 backdrop-blur-sm rounded-lg border border-gray-700 p-5 mb-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1">
+                  Minecraft-Benutzername
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-base focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Dein Minecraft-Name"
+                  disabled={isLoading}
+                />
+              </div>
 
-          <div className="mt-12 p-6 bg-gray-800 rounded-lg border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4">Über dieses Portal</h2>
-            <p className="text-gray-400">
-              Hier kannst du verschiedene Einstellungen für deinen Spieler auf unserem Minecraft-Server verwalten. Du
-              kannst PVP aktivieren, Teleport-Schutz einrichten und vieles mehr.
-            </p>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-base font-medium rounded-md transition-colors duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Wird geladen...
+                  </>
+                ) : (
+                  "Einstellungen anzeigen"
+                )}
+              </button>
+
+              {error && (
+                <div className="p-2 bg-red-900/30 border border-red-800 rounded-md">
+                  <p className="text-red-300 text-sm">{error}</p>
+                </div>
+              )}
+            </form>
+          </div>
+
+          {/* Server-Informationen */}
+          <div className="mb-4">
+            <ButtonGrid />
+          </div>
+
+          {/* Moderator-Login Link */}
+          <div className="text-center mb-2">
+            <button
+              onClick={() => setShowModLogin(true)}
+              className="text-gray-500 hover:text-gray-400 transition-colors text-sm"
+            >
+              Moderator-Login
+            </button>
           </div>
         </div>
       </main>
 
-      <footer className="py-6 text-center text-gray-500">
-        <p>© {new Date().getFullYear()} Minecraft Server Management</p>
+      <footer className="py-3 text-center text-gray-500 z-10 text-sm">
+        <p>© {new Date().getFullYear()} FrogCraft Minecraft Server</p>
       </footer>
+
+      {showSettings && <PlayerSettings username={username} onClose={() => setShowSettings(false)} />}
+      {showModLogin && <ModeratorLogin onClose={() => setShowModLogin(false)} />}
     </div>
   )
 }

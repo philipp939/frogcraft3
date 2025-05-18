@@ -1,6 +1,6 @@
 "use client"
 
-import Modal from "./Modal"
+import { X } from "lucide-react"
 
 interface CommandsModalProps {
   isOpen: boolean
@@ -31,16 +31,33 @@ const commands = [
 ]
 
 export default function CommandsModal({ isOpen, onClose }: CommandsModalProps) {
+  if (!isOpen) return null
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Server Commands">
-      <div className="space-y-3">
-        {commands.map((cmd, index) => (
-          <div key={index} className="bg-gray-700 p-3 rounded-lg">
-            <code className="text-purple-400 font-mono text-sm block mb-1">{cmd.command}</code>
-            <p className="text-gray-300 text-sm">{cmd.description}</p>
-          </div>
-        ))}
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-gray-800 rounded-lg border border-gray-700 p-6 w-full max-w-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-white">Server Commands</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {commands.map((cmd, index) => (
+            <div key={index} className="bg-gray-700 p-3 rounded-lg">
+              <code className="text-purple-400 font-mono text-base block mb-1">{cmd.command}</code>
+              <p className="text-gray-300">{cmd.description}</p>
+            </div>
+          ))}
+        </div>
       </div>
-    </Modal>
+    </div>
   )
 }

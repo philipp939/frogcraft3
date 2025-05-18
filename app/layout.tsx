@@ -2,6 +2,7 @@ import "./globals.css"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import type React from "react"
+import TableInitializer from "./components/TableInitializer"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,7 +23,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de" className={inter.variable}>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <TableInitializer />
+        {children}
+      </body>
     </html>
   )
 }
