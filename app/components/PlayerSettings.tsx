@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Switch } from "@/components/ui/switch"
 import { createClientSupabaseClient } from "@/lib/supabase"
 import { Check, Loader2, X, AlertTriangle } from "lucide-react"
+import { Switch } from "./ui/custom-switch"
 
 interface PlayerSettingsProps {
   username: string

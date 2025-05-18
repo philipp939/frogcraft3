@@ -11,8 +11,8 @@ export default function Countdown() {
   })
 
   useEffect(() => {
-    // Target date: July 21, 2024 at 19:00
-    const targetDate = new Date("2024-07-21T19:00:00")
+    // Target date: July 21, 2024 at 19:00 (German time)
+    const targetDate = new Date("2024-07-21T19:00:00+02:00") // Explicitly set timezone
 
     const calculateTimeLeft = () => {
       const now = new Date()

@@ -8,9 +8,6 @@ import PlayerSettings from "./components/PlayerSettings"
 import ProfessionalBackground from "./components/ProfessionalBackground"
 import ModeratorLogin from "./components/ModeratorLogin"
 import Countdown from "./components/Countdown"
-
-// Importiere die benötigten Komponenten
-import Header from "./components/Header"
 import CopyableIP from "./components/CopyableIP"
 import ButtonGrid from "./components/ButtonGrid"
 
@@ -51,7 +48,6 @@ export default function Home() {
         <div className="w-full max-w-md mx-auto px-4">
           {/* Header-Bereich */}
           <div className="mb-4 text-center">
-            <Header />
             <CopyableIP />
             <Countdown />
           </div>
