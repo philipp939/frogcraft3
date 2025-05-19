@@ -20,7 +20,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Fix for rounded corners */
+/* Fix für runde Ecken - wichtig: !important verwenden */
 .rounded-lg {
   border-radius: 0.5rem !important;
 }
@@ -31,6 +31,18 @@ body {
 
 .rounded-sm {
   border-radius: 0.25rem !important;
+}
+
+.rounded-xl {
+  border-radius: 0.75rem !important;
+}
+
+.rounded-2xl {
+  border-radius: 1rem !important;
+}
+
+.rounded-3xl {
+  border-radius: 1.5rem !important;
 }
 
 .rounded-full {

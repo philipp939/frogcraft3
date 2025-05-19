@@ -11,12 +11,18 @@ export default function Countdown() {
   })
 
   useEffect(() => {
-    // Target date: July 21, 2024 at 19:00 (German time)
-    const targetDate = new Date("2024-07-21T19:00:00+02:00") // Explicitly set timezone
+    // Target date: This Friday at 20:00 (German time)
+    const today = new Date()
+    const targetDay = new Date(today)
+    const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const daysUntilFriday = dayOfWeek <= 5 ? 5 - dayOfWeek : 7 - dayOfWeek + 5
+
+    targetDay.setDate(today.getDate() + daysUntilFriday)
+    targetDay.setHours(20, 0, 0, 0) // 20:00:00.000
 
     const calculateTimeLeft = () => {
       const now = new Date()
-      const difference = targetDate.getTime() - now.getTime()
+      const difference = targetDay.getTime() - now.getTime()
 
       if (difference > 0) {
         setTimeLeft({
@@ -38,32 +44,32 @@ export default function Countdown() {
   }, [])
 
   return (
-    <div className="mb-4 text-center">
-      <h2 className="text-lg font-medium mb-2 text-gray-200">Server Start:</h2>
+    <div className="mb-6 text-center">
+      <h2 className="text-xl font-bold mb-3 text-blue-400">Server Start:</h2>
       <div className="flex justify-center space-x-4">
         <div className="text-center">
-          <div className="bg-gray-800 rounded-lg p-2 min-w-[60px]">
-            <span className="text-2xl font-bold text-blue-400">{timeLeft.days}</span>
+          <div className="bg-gray-800 rounded-lg p-3 min-w-[70px]">
+            <span className="text-3xl font-bold text-blue-400">{timeLeft.days}</span>
           </div>
-          <span className="text-xs text-gray-400 mt-1">Tage</span>
+          <span className="text-sm text-gray-400 mt-1">Tage</span>
         </div>
         <div className="text-center">
-          <div className="bg-gray-800 rounded-lg p-2 min-w-[60px]">
-            <span className="text-2xl font-bold text-blue-400">{timeLeft.hours}</span>
+          <div className="bg-gray-800 rounded-lg p-3 min-w-[70px]">
+            <span className="text-3xl font-bold text-blue-400">{timeLeft.hours}</span>
           </div>
-          <span className="text-xs text-gray-400 mt-1">Stunden</span>
+          <span className="text-sm text-gray-400 mt-1">Stunden</span>
         </div>
         <div className="text-center">
-          <div className="bg-gray-800 rounded-lg p-2 min-w-[60px]">
-            <span className="text-2xl font-bold text-blue-400">{timeLeft.minutes}</span>
+          <div className="bg-gray-800 rounded-lg p-3 min-w-[70px]">
+            <span className="text-3xl font-bold text-blue-400">{timeLeft.minutes}</span>
           </div>
-          <span className="text-xs text-gray-400 mt-1">Minuten</span>
+          <span className="text-sm text-gray-400 mt-1">Minuten</span>
         </div>
         <div className="text-center">
-          <div className="bg-gray-800 rounded-lg p-2 min-w-[60px]">
-            <span className="text-2xl font-bold text-blue-400">{timeLeft.seconds}</span>
+          <div className="bg-gray-800 rounded-lg p-3 min-w-[70px]">
+            <span className="text-3xl font-bold text-blue-400">{timeLeft.seconds}</span>
           </div>
-          <span className="text-xs text-gray-400 mt-1">Sekunden</span>
+          <span className="text-sm text-gray-400 mt-1">Sekunden</span>
         </div>
       </div>
     </div>

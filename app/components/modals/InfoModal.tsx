@@ -15,13 +15,14 @@ export default function InfoModal({ isOpen, onClose }: InfoModalProps) {
       onClick={onClose}
     >
       <div
-        className="bg-gray-800 rounded-lg border border-gray-700 p-6 w-full max-w-lg"
+        className="bg-gray-800 rounded-3xl border border-gray-700 p-6 w-full max-w-lg shadow-xl"
         onClick={(e) => e.stopPropagation()}
+        style={{ borderRadius: "24px" }}
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-white">Server Information</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700 transition-colors">
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
@@ -54,7 +55,7 @@ export default function InfoModal({ isOpen, onClose }: InfoModalProps) {
             </li>
           </ol>
 
-          <div className="mt-6 p-4 bg-gray-700 rounded-lg">
+          <div className="mt-6 p-4 bg-gray-700 rounded-2xl" style={{ borderRadius: "16px" }}>
             <h3 className="text-lg font-medium mb-2">Empfehlung:</h3>
             <p>Spiele mit dem Voice-Chat Mod für ein besseres Spielerlebnis.</p>
             <ul className="list-disc list-inside mt-2 space-y-2 ml-4">

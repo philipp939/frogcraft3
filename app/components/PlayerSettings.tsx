@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClientSupabaseClient } from "@/lib/supabase"
-import { Check, Loader2, X, AlertTriangle } from "lucide-react"
+import { createServerSupabaseClient } from "@/lib/supabase"
+import { Check, Loader2, X } from "lucide-react"
 import { Switch } from "./ui/custom-switch"
 
 interface PlayerSettingsProps {
@@ -12,72 +12,34 @@ interface PlayerSettingsProps {
 
 export default function PlayerSettings({ username, onClose }: PlayerSettingsProps) {
   const [pvpEnabled, setPvpEnabled] = useState(false)
-  const [isVerified, setIsVerified] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const [playerId, setPlayerId] = useState<string | null>(null)
-  const supabase = createClientSupabaseClient()
+  const [playerUuid, setPlayerUuid] = useState<string | null>(null)
+  const supabase = createServerSupabaseClient()
 
   // Lade die Spieler-ID und Einstellungen
   useEffect(() => {
-    const loadPlayerAndSettings = async () => {
+    const loadPlayerSettings = async () => {
       try {
         setIsLoading(true)
 
-        // Zuerst den Spieler finden oder erstellen
-        const { data: playerData, error: playerError } = await supabase
+        // Spieler und Einstellungen laden
+        const { data, error } = await supabase
           .from("players")
-          .select("id")
+          .select("uuid, pvp_enable")
           .eq("username", username.toLowerCase())
           .single()
 
-        if (playerError && playerError.code !== "PGRST116") {
-          console.error("Fehler beim Laden des Spielers:", playerError)
-          setMessage({ type: "error", text: "Fehler beim Laden des Spielers" })
+        if (error) {
+          console.error("Fehler beim Laden der Spielereinstellungen:", error)
+          setMessage({ type: "error", text: "Fehler beim Laden der Einstellungen" })
           return
         }
 
-        let currentPlayerId = playerData?.id
-
-        // Wenn der Spieler nicht existiert, erstelle ihn
-        if (!currentPlayerId) {
-          const { data: newPlayer, error: createError } = await supabase
-            .from("players")
-            .insert([{ username: username.toLowerCase() }])
-            .select("id")
-            .single()
-
-          if (createError) {
-            console.error("Fehler beim Erstellen des Spielers:", createError)
-            setMessage({ type: "error", text: "Fehler beim Erstellen des Spielers" })
-            return
-          }
-
-          currentPlayerId = newPlayer.id
-        }
-
-        setPlayerId(currentPlayerId)
-
-        // Prüfe, ob die player_settings Tabelle existiert
-        const { error: tableCheckError } = await supabase.rpc("create_player_settings_table")
-        if (tableCheckError) {
-          console.error("Fehler beim Prüfen/Erstellen der Tabelle:", tableCheckError)
-        }
-
-        // Lade die Einstellungen
-        const { data: settingsData, error: settingsError } = await supabase
-          .from("player_settings")
-          .select("pvp_enabled, verified")
-          .eq("username", username.toLowerCase())
-          .single()
-
-        if (settingsError && settingsError.code !== "PGRST116") {
-          console.error("Fehler beim Laden der Einstellungen:", settingsError)
-          setMessage({ type: "error", text: "Fehler beim Laden der Einstellungen" })
-        } else if (settingsData) {
-          setPvpEnabled(settingsData.pvp_enabled)
-          setIsVerified(settingsData.verified)
+        if (data) {
+          setPlayerUuid(data.uuid)
+          setPvpEnabled(data.pvp_enable)
         }
       } catch (err) {
         console.error("Fehler:", err)
@@ -87,13 +49,13 @@ export default function PlayerSettings({ username, onClose }: PlayerSettingsProp
       }
     }
 
-    loadPlayerAndSettings()
+    loadPlayerSettings()
   }, [username, supabase])
 
   // Speichere die Einstellungen
   const saveSettings = async () => {
-    if (!playerId) {
-      setMessage({ type: "error", text: "Spieler-ID nicht gefunden" })
+    if (!playerUuid) {
+      setMessage({ type: "error", text: "Spieler nicht gefunden" })
       return
     }
 
@@ -101,25 +63,19 @@ export default function PlayerSettings({ username, onClose }: PlayerSettingsProp
       setIsSaving(true)
       setMessage(null)
 
-      // Aktualisiere den letzten Login des Spielers
-      await supabase.from("players").update({ last_login: new Date().toISOString() }).eq("id", playerId)
-
-      // Speichere die Einstellungen
-      const { error } = await supabase.from("player_settings").upsert(
-        {
-          username: username.toLowerCase(),
-          pvp_enabled: pvpEnabled,
-          verified: false, // Immer auf false setzen, wenn Einstellungen geändert werden
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "username" },
-      )
+      // Aktualisiere die Spielereinstellungen
+      const { error } = await supabase
+        .from("players")
+        .update({
+          pvp_enable: pvpEnabled,
+          last_seen: new Date().toISOString(),
+        })
+        .eq("uuid", playerUuid)
 
       if (error) {
         throw error
       }
 
-      setIsVerified(false) // Aktualisiere den Verifikationsstatus
       setMessage({
         type: "success",
         text: "Einstellungen gespeichert. Du musst deine Änderungen im Spiel mit /settings bestätigen.",
@@ -160,18 +116,6 @@ export default function PlayerSettings({ username, onClose }: PlayerSettingsProp
                   <p className="text-sm text-gray-400">
                     Wenn aktiviert, kannst du andere Spieler angreifen und von ihnen angegriffen werden.
                   </p>
-                  {!isVerified && pvpEnabled && (
-                    <div className="flex items-center mt-2 text-yellow-400 text-sm">
-                      <AlertTriangle className="w-4 h-4 mr-1 flex-shrink-0" />
-                      <span>Nicht verifiziert. Bestätige im Spiel mit /settings</span>
-                    </div>
-                  )}
-                  {isVerified && pvpEnabled && (
-                    <div className="flex items-center mt-2 text-green-400 text-sm">
-                      <Check className="w-4 h-4 mr-1 flex-shrink-0" />
-                      <span>Verifiziert</span>
-                    </div>
-                  )}
                 </div>
                 <Switch checked={pvpEnabled} onCheckedChange={setPvpEnabled} />
               </div>

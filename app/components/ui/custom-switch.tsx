@@ -17,11 +17,13 @@ export function Switch({ checked, onCheckedChange, disabled = false }: SwitchPro
         checked ? "bg-blue-600" : "bg-gray-700"
       } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       onClick={() => !disabled && onCheckedChange(!checked)}
+      style={{ borderRadius: "9999px" }}
     >
       <span
         className={`${
           checked ? "translate-x-6" : "translate-x-1"
-        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-md`}
+        style={{ borderRadius: "9999px" }}
       />
     </button>
   )

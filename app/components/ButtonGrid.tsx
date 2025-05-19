@@ -18,59 +18,35 @@ export default function ButtonGrid() {
     setActiveModal(null)
   }
 
+  const buttons = [
+    { icon: <Info className="w-5 h-5" />, label: "Info", action: () => openModal("info") },
+    { icon: <Book className="w-5 h-5" />, label: "Regeln", action: () => openModal("rules") },
+    { icon: <Terminal className="w-5 h-5" />, label: "Commands", action: () => openModal("commands") },
+    { icon: <Keyboard className="w-5 h-5" />, label: "Keybinds", action: () => openModal("keybinds") },
+    {
+      icon: <MessageSquare className="w-5 h-5" />,
+      label: "Discord",
+      action: () => window.open("https://discord.gg/H2yX7d8Bmv", "_blank"),
+    },
+    {
+      icon: <Package className="w-5 h-5" />,
+      label: "Modpack",
+      action: () => window.open("https://www.curseforge.com/minecraft/modpacks/frogcraft1", "_blank"),
+    },
+  ]
+
   return (
-    <div className="flex flex-wrap justify-center gap-6 text-base">
-      <button
-        onClick={() => openModal("info")}
-        className="text-gray-300 hover:text-white transition-colors flex items-center"
-      >
-        <Info className="w-4 h-4 mr-2" />
-        <span>Info</span>
-      </button>
-
-      <button
-        onClick={() => openModal("rules")}
-        className="text-gray-300 hover:text-white transition-colors flex items-center"
-      >
-        <Book className="w-4 h-4 mr-2" />
-        <span>Regeln</span>
-      </button>
-
-      <button
-        onClick={() => openModal("commands")}
-        className="text-gray-300 hover:text-white transition-colors flex items-center"
-      >
-        <Terminal className="w-4 h-4 mr-2" />
-        <span>Commands</span>
-      </button>
-
-      <button
-        onClick={() => openModal("keybinds")}
-        className="text-gray-300 hover:text-white transition-colors flex items-center"
-      >
-        <Keyboard className="w-4 h-4 mr-2" />
-        <span>Keybinds</span>
-      </button>
-
-      <a
-        href="https://discord.gg/H2yX7d8Bmv"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-gray-300 hover:text-white transition-colors flex items-center"
-      >
-        <MessageSquare className="w-4 h-4 mr-2" />
-        <span>Discord</span>
-      </a>
-
-      <a
-        href="https://www.curseforge.com/minecraft/modpacks/frogcraft1"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-gray-300 hover:text-white transition-colors flex items-center"
-      >
-        <Package className="w-4 h-4 mr-2" />
-        <span>Modpack</span>
-      </a>
+    <div className="grid grid-cols-2 gap-3">
+      {buttons.map((button, index) => (
+        <button
+          key={index}
+          onClick={button.action}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 text-center bg-gray-700/70 border-gray-600/50 hover:bg-gray-700 hover:border-gray-500"
+        >
+          <div className="p-2 rounded-full mb-2 bg-gray-600/50">{button.icon}</div>
+          <span className="text-sm font-medium">{button.label}</span>
+        </button>
+      ))}
 
       {/* Modals */}
       <InfoModal isOpen={activeModal === "info"} onClose={closeModal} />
