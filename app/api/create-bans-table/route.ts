@@ -5,12 +5,21 @@ export async function GET() {
   try {
     const supabase = createServerSupabaseClient()
 
-    // Direkte SQL-Ausführung, um die Tabelle zu erstellen
-    const { error } = await supabase.sql(`
-      -- Prüfe, ob die Tabelle bereits existiert
-      CREATE TABLE IF NOT EXISTS public.bans (
+    // Prüfen, ob die Tabelle existiert und löschen, falls ja
+    const { error: dropError } = await supabase.sql`
+      DROP TABLE IF EXISTS public.bans;
+    `
+
+    if (dropError) {
+      console.error("Fehler beim Löschen der alten Bann-Tabelle:", dropError)
+      return NextResponse.json({ error: "Fehler beim Löschen der alten Bann-Tabelle" }, { status: 500 })
+    }
+
+    // Direkte SQL-Ausführung, um die Tabelle neu zu erstellen
+    const { error } = await supabase.sql`
+      CREATE TABLE public.bans (
         id SERIAL PRIMARY KEY,
-        uuid TEXT, -- Explizit als TEXT definiert, nicht UUID
+        uuid TEXT,
         username TEXT NOT NULL,
         reason TEXT NOT NULL,
         banned_by TEXT NOT NULL,
@@ -20,11 +29,10 @@ export async function GET() {
         active BOOLEAN DEFAULT true
       );
       
-      -- Erstelle Indizes für schnellere Abfragen
       CREATE INDEX IF NOT EXISTS idx_bans_username ON public.bans(username);
       CREATE INDEX IF NOT EXISTS idx_bans_uuid ON public.bans(uuid);
       CREATE INDEX IF NOT EXISTS idx_bans_active ON public.bans(active);
-    `)
+    `
 
     if (error) {
       console.error("Fehler beim Erstellen der Bann-Tabelle:", error)

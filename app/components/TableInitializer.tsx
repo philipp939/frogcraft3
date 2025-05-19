@@ -8,27 +8,17 @@ export default function TableInitializer() {
   useEffect(() => {
     const initTables = async () => {
       try {
-        // Erstelle die player_settings-Tabelle
-        const response1 = await fetch("/api/create-tables")
-        if (!response1.ok) {
-          const errorData = await response1.json()
-          console.error(
-            "Fehler beim Initialisieren der player_settings-Tabelle:",
-            errorData.error || response1.statusText,
-          )
+        // Initialisiere alle Tabellen mit einem einzigen Aufruf
+        const response = await fetch("/api/initialize-tables")
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          console.error("Fehler beim Initialisieren der Tabellen:", errorData.error || response.statusText)
+          return
         }
 
-        // Erstelle die bans-Tabelle
-        const response2 = await fetch("/api/create-bans-table")
-        if (!response2.ok) {
-          const errorData = await response2.json()
-          console.error("Fehler beim Initialisieren der bans-Tabelle:", errorData.error || response2.statusText)
-        }
-
-        if (response1.ok && response2.ok) {
-          console.log("Tabellen erfolgreich initialisiert")
-          setInitialized(true)
-        }
+        console.log("Tabellen erfolgreich initialisiert")
+        setInitialized(true)
       } catch (error) {
         console.error("Fehler bei der Tabelleninitialisierung:", error)
       }

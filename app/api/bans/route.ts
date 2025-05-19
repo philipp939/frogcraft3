@@ -25,20 +25,22 @@ export async function POST(request: Request) {
       // Wir setzen die Ausführung fort, auch wenn der Spieler nicht gefunden wurde
     }
 
+    // Debug-Logging
+    console.log("Ban-Daten:", {
+      username: username.toLowerCase(),
+      uuid: playerUuid,
+      reason,
+      banned_by,
+      duration_minutes,
+    })
+
     // Bann erstellen - mit verbesserter Fehlerbehandlung
     try {
-      const { error } = await supabase.from("bans").insert([
-        {
-          uuid: playerUuid, // Kann null sein, wenn der Spieler nicht gefunden wurde
-          username: username.toLowerCase(),
-          reason,
-          banned_by,
-          timestamp: new Date().toISOString(),
-          duration_minutes,
-          source: "web",
-          active: true,
-        },
-      ])
+      // Direkte SQL-Ausführung, um Typprobleme zu vermeiden
+      const { error } = await supabase.sql`
+        INSERT INTO bans (username, uuid, reason, banned_by, duration_minutes, timestamp, source, active)
+        VALUES (${username.toLowerCase()}, ${playerUuid || null}, ${reason}, ${banned_by}, ${duration_minutes}, NOW(), 'web', true)
+      `
 
       if (error) {
         console.error("Detaillierter Fehler beim Erstellen des Banns:", error)

@@ -34,13 +34,17 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
     setDetailedError(null)
 
     try {
+      // Erstelle die Tabelle neu, falls sie nicht existiert oder Probleme hat
+      await fetch("/api/create-bans-table")
+
+      // Sende den Ban-Request
       const response = await fetch("/api/bans", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username,
+          username: username.trim(), // Entferne Leerzeichen
           reason,
           duration_minutes: Number(duration),
           banned_by: bannedBy,
@@ -79,7 +83,10 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 w-full max-w-md">
+      <div
+        className="bg-gray-800 rounded-3xl border border-gray-700 p-6 w-full max-w-md"
+        style={{ borderRadius: "24px" }}
+      >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-white">Spieler bannen</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors" aria-label="Schließen">
@@ -88,7 +95,10 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
         </div>
 
         {success ? (
-          <div className="bg-green-900/30 border border-green-800 rounded-lg p-4 flex items-center text-green-300">
+          <div
+            className="bg-green-900/30 border border-green-800 rounded-lg p-4 flex items-center text-green-300"
+            style={{ borderRadius: "12px" }}
+          >
             <Check className="w-5 h-5 mr-2" />
             <p>Spieler wurde erfolgreich gebannt!</p>
           </div>
@@ -103,9 +113,10 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-full text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="Spielername"
                 disabled={isLoading}
+                style={{ borderRadius: "9999px" }}
               />
             </div>
 
@@ -117,9 +128,10 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
                 id="reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[80px]"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[80px]"
                 placeholder="Grund für den Bann"
                 disabled={isLoading}
+                style={{ borderRadius: "12px" }}
               />
             </div>
 
@@ -133,15 +145,17 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
                 value={duration}
                 onChange={(e) => setDuration(e.target.value === "" ? "" : Number(e.target.value))}
                 min="0"
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-full text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="Dauer in Minuten (0 = permanent)"
                 disabled={isLoading}
+                style={{ borderRadius: "9999px" }}
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => setDuration(60)} // 1 Stunde
                   className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs rounded-md"
+                  style={{ borderRadius: "6px" }}
                 >
                   1 Stunde
                 </button>
@@ -149,6 +163,7 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
                   type="button"
                   onClick={() => setDuration(1440)} // 1 Tag
                   className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs rounded-md"
+                  style={{ borderRadius: "6px" }}
                 >
                   1 Tag
                 </button>
@@ -156,6 +171,7 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
                   type="button"
                   onClick={() => setDuration(10080)} // 1 Woche
                   className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs rounded-md"
+                  style={{ borderRadius: "6px" }}
                 >
                   1 Woche
                 </button>
@@ -163,6 +179,7 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
                   type="button"
                   onClick={() => setDuration(43200)} // 30 Tage
                   className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs rounded-md"
+                  style={{ borderRadius: "6px" }}
                 >
                   30 Tage
                 </button>
@@ -170,6 +187,7 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
                   type="button"
                   onClick={() => setDuration(0)} // Permanent
                   className="px-2 py-1 bg-red-900/50 hover:bg-red-800 text-xs rounded-md"
+                  style={{ borderRadius: "6px" }}
                 >
                   Permanent
                 </button>
@@ -185,9 +203,10 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
                 id="bannedBy"
                 value={bannedBy}
                 onChange={(e) => setBannedBy(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-full text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="Dein Name oder ID"
                 disabled={isLoading}
+                style={{ borderRadius: "9999px" }}
               />
               <p className="text-xs text-gray-400 mt-1">
                 Hinweis: Du musst kein registrierter Spieler sein, um jemanden zu bannen.
@@ -195,7 +214,7 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
             </div>
 
             {error && (
-              <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg">
+              <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg" style={{ borderRadius: "12px" }}>
                 <div className="flex items-start">
                   <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5 text-red-300" />
                   <p className="text-red-300 text-sm">{error}</p>
@@ -204,7 +223,10 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
                 {detailedError && (
                   <details className="mt-2">
                     <summary className="text-xs text-red-300 cursor-pointer">Technische Details anzeigen</summary>
-                    <pre className="mt-2 p-2 bg-red-950/30 rounded text-xs text-red-300 overflow-x-auto">
+                    <pre
+                      className="mt-2 p-2 bg-red-950/30 rounded text-xs text-red-300 overflow-x-auto"
+                      style={{ borderRadius: "6px" }}
+                    >
                       {detailedError}
                     </pre>
                   </details>
@@ -216,15 +238,17 @@ export default function BanForm({ onClose, onSuccess, initialUsername = "" }: Ba
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-colors"
                 disabled={isLoading}
+                style={{ borderRadius: "9999px" }}
               >
                 Abbrechen
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors flex items-center"
+                style={{ borderRadius: "9999px" }}
               >
                 {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Spieler bannen
