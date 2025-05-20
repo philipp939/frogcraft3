@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase"
+import { sql } from "@vercel/postgres"
 
 export async function GET() {
   try {
     const supabase = createServerSupabaseClient()
 
-    // Erstelle die player_settings-Tabelle
-    const { error: settingsError } = await supabase.sql`
+    // Create player_settings table
+    const createPlayerSettingsTable = `
       CREATE TABLE IF NOT EXISTS public.player_settings (
         id SERIAL PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
@@ -19,13 +20,20 @@ export async function GET() {
       CREATE INDEX IF NOT EXISTS idx_player_settings_username ON public.player_settings(username);
     `
 
+    const { error: settingsError } = await supabase
+      .from('_supabase_schema')
+      .select('*')
+      .then(async () => {
+        return await supabase.rpc('exec_sql', { query: createPlayerSettingsTable })
+      })
+
     if (settingsError) {
-      console.error("Fehler beim Erstellen der player_settings-Tabelle:", settingsError)
-      return NextResponse.json({ error: "Fehler beim Erstellen der player_settings-Tabelle" }, { status: 500 })
+      console.error("Error creating player_settings table:", settingsError)
+      return NextResponse.json({ error: "Error creating player_settings table" }, { status: 500 })
     }
 
-    // Erstelle die bans-Tabelle
-    const { error: bansError } = await supabase.sql`
+    // Create bans table
+    const createBansTable = `
       CREATE TABLE IF NOT EXISTS public.bans (
         id SERIAL PRIMARY KEY,
         uuid TEXT,
@@ -43,18 +51,25 @@ export async function GET() {
       CREATE INDEX IF NOT EXISTS idx_bans_active ON public.bans(active);
     `
 
+    const { error: bansError } = await supabase
+      .from('_supabase_schema')
+      .select('*')
+      .then(async () => {
+        return await supabase.rpc('exec_sql', { query: createBansTable })
+      })
+
     if (bansError) {
-      console.error("Fehler beim Erstellen der bans-Tabelle:", bansError)
-      return NextResponse.json({ error: "Fehler beim Erstellen der bans-Tabelle" }, { status: 500 })
+      console.error("Error creating bans table:", bansError)
+      return NextResponse.json({ error: "Error creating bans table" }, { status: 500 })
     }
 
     return NextResponse.json({
-      message: "Tabellen erfolgreich initialisiert",
+      message: "Tables successfully initialized",
     })
   } catch (error) {
-    console.error("Fehler bei der Tabelleninitialisierung:", error)
+    console.error("Error during table initialization:", error)
     return NextResponse.json(
-      { error: "Ein Fehler ist aufgetreten: " + (error instanceof Error ? error.message : String(error)) },
+      { error: "An error occurred: " + (error instanceof Error ? error.message : String(error)) },
       { status: 500 },
     )
   }

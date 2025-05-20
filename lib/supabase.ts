@@ -1,23 +1,44 @@
 import { createClient } from "@supabase/supabase-js"
 
-// Für serverseitige Aufrufe
+// For server-side calls
 export const createServerSupabaseClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://vefhpdjiqxugnykucfep.supabase.co"
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmhwZGppcXh1Z255a3VjZmVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzQwNTg3MywiZXhwIjoyMDYyOTgxODczfQ.uopBjNwEf27Qfi-vW4tLLNEHqBDp0Lq0OiVeM2TSsvU"
-  return createClient(supabaseUrl, supabaseKey)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Missing Supabase environment variables for server client")
+  }
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false
+    }
+  })
 }
 
-// Für clientseitige Aufrufe (Singleton-Pattern)
+// For client-side calls (Singleton pattern)
 let clientSupabaseInstance: ReturnType<typeof createClient> | null = null
 
 export const createClientSupabaseClient = () => {
+  if (typeof window === 'undefined') {
+    throw new Error("createClientSupabaseClient should only be called in browser context")
+  }
+
   if (clientSupabaseInstance) return clientSupabaseInstance
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://vefhpdjiqxugnykucfep.supabase.co"
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  clientSupabaseInstance = createClient(supabaseUrl, supabaseKey)
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Missing Supabase environment variables for client")
+  }
+
+  clientSupabaseInstance = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: true,
+      storageKey: 'supabase.auth.token'
+    }
+  })
+  
   return clientSupabaseInstance
 }
