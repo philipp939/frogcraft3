@@ -1,46 +1,42 @@
-// Datei: app/api/player/[username]/route.ts
-
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-// Supabase-Client mit env-Variablen
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function GET(
-  request: NextRequest,
-  context: { params: { username: string } },
-) {
+export async function GET(request: Request, { params }: { params: { username: string } }) {
   try {
-    const { username } = context.params
+    console.log("API aufgerufen für Username:", params.username)
 
-    if (!username) {
+    if (!params || !params.username) {
+      console.log("Kein Username bereitgestellt")
       return NextResponse.json({ error: "Username ist erforderlich" }, { status: 400 })
     }
 
-    const cleanUsername = username.toLowerCase().trim()
+    const username = params.username.toLowerCase().trim()
+    console.log("Verarbeiteter Username:", username)
 
-    if (!cleanUsername) {
+    if (!username) {
       return NextResponse.json({ error: "Ungültiger Username" }, { status: 400 })
     }
 
-    // Spieler abrufen
+    // Spieler abrufen oder erstellen
     let { data: player, error: playerError } = await supabase
       .from("players")
       .select("*")
-      .eq("username", cleanUsername)
+      .eq("username", username)
       .single()
 
+    console.log("Spieler-Abfrage Ergebnis:", { player, playerError })
+
     if (playerError && playerError.code === "PGRST116") {
-      // Spieler existiert nicht, neu erstellen
+      // Spieler existiert nicht, erstellen
+      console.log("Erstelle neuen Spieler:", username)
       const { data: newPlayer, error: createError } = await supabase
         .from("players")
         .insert([
           {
-            username: cleanUsername,
-            uuid: `offline-${cleanUsername}-${Date.now()}`,
+            username,
+            uuid: `offline-${username}-${Date.now()}`,
             created_at: new Date().toISOString(),
             kills: 0,
             bounty: 0,
@@ -50,48 +46,57 @@ export async function GET(
         .single()
 
       if (createError) {
-        console.error("Fehler beim Erstellen:", createError)
+        console.error("Fehler beim Erstellen des Spielers:", createError)
         return NextResponse.json({ error: "Fehler beim Erstellen des Spielers" }, { status: 500 })
       }
-
       player = newPlayer
+      console.log("Neuer Spieler erstellt:", player)
     } else if (playerError) {
-      console.error("Abruf-Fehler:", playerError)
-      return NextResponse.json({ error: "Fehler beim Abrufen" }, { status: 500 })
+      console.error("Fehler beim Abrufen des Spielers:", playerError)
+      return NextResponse.json({ error: "Fehler beim Abrufen des Spielers" }, { status: 500 })
     }
 
     // Einstellungen abrufen
-    const { data: settingsData } = await supabase
+    const { data: settingsData, error: settingsError } = await supabase
       .from("player_settings")
       .select("setting_name, setting_value")
       .eq("player_id", player.id)
 
+    console.log("Einstellungen-Abfrage:", { settingsData, settingsError })
+
+    // Einstellungen in ein Objekt umwandeln
     const settings: Record<string, boolean> = {}
-    settingsData?.forEach((s) => {
-      settings[s.setting_name] = s.setting_value
-    })
+    if (settingsData) {
+      settingsData.forEach((setting) => {
+        settings[setting.setting_name] = setting.setting_value
+      })
+    }
 
     // Bans abrufen
-    const { data: bansData } = await supabase
+    const { data: bansData, error: bansError } = await supabase
       .from("bans")
       .select("*")
       .eq("player_id", player.id)
       .order("banned_at", { ascending: false })
 
-    return NextResponse.json({
+    console.log("Bans-Abfrage:", { bansData, bansError })
+
+    const result = {
       player,
       settings,
       bans: bansData || [],
-    })
+    }
+
+    console.log("API Antwort:", result)
+    return NextResponse.json(result)
   } catch (error) {
-    console.error("Fehler:", error)
+    console.error("Unerwarteter Fehler in API:", error)
     return NextResponse.json(
       {
-        error: "Unerwarteter Fehler",
-        details: error instanceof Error ? error.message : String(error),
+        error: "Unerwarteter Fehler beim Abrufen der Spielerdaten",
+        details: error instanceof Error ? error.message : "Unbekannter Fehler",
       },
       { status: 500 },
     )
   }
 }
-

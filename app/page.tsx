@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Users, Gamepad2, Trophy, Coins } from "lucide-react"
+import { Users, Gamepad2, Trophy, Coins, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -12,57 +12,43 @@ interface LeaderboardPlayer {
   bounty?: number
 }
 
+interface PaginationInfo {
+  page: number
+  limit: number
+  totalKills: number
+  totalBounty: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
 export default function HomePage() {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  })
   const [killsLeaderboard, setKillsLeaderboard] = useState<LeaderboardPlayer[]>([])
   const [bountyLeaderboard, setBountyLeaderboard] = useState<LeaderboardPlayer[]>([])
-
-  // Countdown bis 22.07.2025 20:00
-  useEffect(() => {
-    const targetDate = new Date("2025-07-22T20:00:00").getTime()
-
-    const interval = setInterval(() => {
-      const now = new Date().getTime()
-      const difference = targetDate - now
-
-      if (difference > 0) {
-        setTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((difference % (1000 * 60)) / 1000),
-        })
-      } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
-        clearInterval(interval)
-      }
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null)
 
   // Leaderboards laden
-  useEffect(() => {
-    const loadLeaderboards = async () => {
-      try {
-        const response = await fetch("/api/leaderboard")
-        if (response.ok) {
-          const data = await response.json()
-          setKillsLeaderboard(data.kills || [])
-          setBountyLeaderboard(data.bounty || [])
-        }
-      } catch (error) {
-        console.error("Fehler beim Laden der Leaderboards:", error)
+  const loadLeaderboards = async (page = 1) => {
+    try {
+      const response = await fetch(`/api/leaderboard?page=${page}&limit=5`)
+      if (response.ok) {
+        const data = await response.json()
+        setKillsLeaderboard(data.kills || [])
+        setBountyLeaderboard(data.bounty || [])
+        setPagination(data.pagination)
       }
+    } catch (error) {
+      console.error("Fehler beim Laden der Leaderboards:", error)
     }
+  }
 
-    loadLeaderboards()
-  }, [])
+  useEffect(() => {
+    loadLeaderboards(currentPage)
+  }, [currentPage])
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -88,7 +74,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section mit Countdown */}
+      {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <h2 className="text-5xl font-bold text-white mb-6">
@@ -97,32 +83,6 @@ export default function HomePage() {
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             Dein ultimatives Minecraft-Erlebnis mit erweiterten Features, Spielerverwaltung und Community-Tools.
           </p>
-
-          {/* Countdown ohne roten Kasten */}
-          <div className="mb-8 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold text-white mb-4">Server Start Countdown</h3>
-            <div className="flex justify-center space-x-4">
-              <div className="text-center">
-                <div className="countdown-digit">{timeLeft.days.toString().padStart(2, "0")}</div>
-                <div className="text-sm text-gray-300 mt-2">Tage</div>
-              </div>
-              <div className="countdown-separator flex items-center">:</div>
-              <div className="text-center">
-                <div className="countdown-digit">{timeLeft.hours.toString().padStart(2, "0")}</div>
-                <div className="text-sm text-gray-300 mt-2">Stunden</div>
-              </div>
-              <div className="countdown-separator flex items-center">:</div>
-              <div className="text-center">
-                <div className="countdown-digit">{timeLeft.minutes.toString().padStart(2, "0")}</div>
-                <div className="text-sm text-gray-300 mt-2">Minuten</div>
-              </div>
-              <div className="countdown-separator flex items-center">:</div>
-              <div className="text-center">
-                <div className="countdown-digit">{timeLeft.seconds.toString().padStart(2, "0")}</div>
-                <div className="text-sm text-gray-300 mt-2">Sekunden</div>
-              </div>
-            </div>
-          </div>
 
           <div className="flex justify-center">
             <Link href="/dashboard">
@@ -135,10 +95,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Leaderboards */}
+      {/* Leaderboards mit Pagination */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
           <h3 className="text-3xl font-bold text-white text-center mb-12">Leaderboards</h3>
+
+          {/* Pagination Controls */}
+          {pagination && (
+            <div className="flex justify-center items-center mb-8 space-x-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+                className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Zurück
+              </Button>
+
+              <span className="text-white">
+                Seite {pagination.page} von {Math.ceil(pagination.totalKills / pagination.limit)}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+                className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white"
+              >
+                Weiter
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {/* Kills Leaderboard */}
             <div className="leaderboard-card p-6">
@@ -148,27 +140,30 @@ export default function HomePage() {
               </div>
               <div className="space-y-3">
                 {killsLeaderboard.length > 0 ? (
-                  killsLeaderboard.slice(0, 5).map((player, index) => (
-                    <div key={player.username} className="leaderboard-item p-3 flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div
-                          className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
-                            index === 0
-                              ? "bg-yellow-500 text-black rounded-full"
-                              : index === 1
-                                ? "bg-gray-400 text-black rounded-full"
-                                : index === 2
-                                  ? "bg-amber-600 text-black rounded-full"
-                                  : "bg-gray-600 text-white rounded-full"
-                          }`}
-                        >
-                          {index + 1}
+                  killsLeaderboard.map((player, index) => {
+                    const globalRank = (currentPage - 1) * 5 + index + 1
+                    return (
+                      <div key={player.username} className="leaderboard-item p-3 flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div
+                            className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
+                              globalRank === 1
+                                ? "bg-yellow-500 text-black rounded-full"
+                                : globalRank === 2
+                                  ? "bg-gray-400 text-black rounded-full"
+                                  : globalRank === 3
+                                    ? "bg-amber-600 text-black rounded-full"
+                                    : "bg-gray-600 text-white rounded-full"
+                            }`}
+                          >
+                            {globalRank}
+                          </div>
+                          <span className="text-white font-medium">{player.username}</span>
                         </div>
-                        <span className="text-white font-medium">{player.username}</span>
+                        <span className="text-red-400 font-bold">{player.kills || 0} Kills</span>
                       </div>
-                      <span className="text-red-400 font-bold">{player.kills || 0} Kills</span>
-                    </div>
-                  ))
+                    )
+                  })
                 ) : (
                   <div className="text-center text-gray-400 py-8">
                     <p>Noch keine Daten verfügbar</p>
@@ -185,27 +180,30 @@ export default function HomePage() {
               </div>
               <div className="space-y-3">
                 {bountyLeaderboard.length > 0 ? (
-                  bountyLeaderboard.slice(0, 5).map((player, index) => (
-                    <div key={player.username} className="leaderboard-item p-3 flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div
-                          className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
-                            index === 0
-                              ? "bg-yellow-500 text-black rounded-full"
-                              : index === 1
-                                ? "bg-gray-400 text-black rounded-full"
-                                : index === 2
-                                  ? "bg-amber-600 text-black rounded-full"
-                                  : "bg-gray-600 text-white rounded-full"
-                          }`}
-                        >
-                          {index + 1}
+                  bountyLeaderboard.map((player, index) => {
+                    const globalRank = (currentPage - 1) * 5 + index + 1
+                    return (
+                      <div key={player.username} className="leaderboard-item p-3 flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div
+                            className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
+                              globalRank === 1
+                                ? "bg-yellow-500 text-black rounded-full"
+                                : globalRank === 2
+                                  ? "bg-gray-400 text-black rounded-full"
+                                  : globalRank === 3
+                                    ? "bg-amber-600 text-black rounded-full"
+                                    : "bg-gray-600 text-white rounded-full"
+                            }`}
+                          >
+                            {globalRank}
+                          </div>
+                          <span className="text-white font-medium">{player.username}</span>
                         </div>
-                        <span className="text-white font-medium">{player.username}</span>
+                        <span className="text-yellow-400 font-bold">{player.bounty || 0} Coins</span>
                       </div>
-                      <span className="text-yellow-400 font-bold">{player.bounty || 0} Coins</span>
-                    </div>
-                  ))
+                    )
+                  })
                 ) : (
                   <div className="text-center text-gray-400 py-8">
                     <p>Noch keine Daten verfügbar</p>
