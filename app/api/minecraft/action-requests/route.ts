@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "../../../../lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 // GET: Ausstehende Aktionsanfragen für einen Spieler abrufen
 export async function GET(request: Request) {
@@ -17,8 +19,6 @@ export async function GET(request: Request) {
     if (!uuid) {
       return NextResponse.json({ error: "UUID erforderlich" }, { status: 400 })
     }
-
-    const supabase = createServerSupabaseClient()
 
     // Aktionsanfragen abrufen
     const { data: actionRequests, error } = await supabase
@@ -56,8 +56,6 @@ export async function POST(request: Request) {
     if (!requestId || !status) {
       return NextResponse.json({ error: "Anfrage-ID und Status erforderlich" }, { status: 400 })
     }
-
-    const supabase = createServerSupabaseClient()
 
     // Aktionsanfrage aktualisieren
     const { error } = await supabase
