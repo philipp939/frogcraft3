@@ -5,7 +5,16 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function GET(request: Request, { params }: { params: { username: string } }) {
   try {
-    const username = params.username.toLowerCase()
+    // Sicherstellen, dass params existiert
+    if (!params || !params.username) {
+      return NextResponse.json({ error: "Username ist erforderlich" }, { status: 400 })
+    }
+
+    const username = params.username.toLowerCase().trim()
+
+    if (!username) {
+      return NextResponse.json({ error: "Ungültiger Username" }, { status: 400 })
+    }
 
     // Spieler abrufen oder erstellen
     let { data: player, error: playerError } = await supabase
@@ -32,12 +41,12 @@ export async function GET(request: Request, { params }: { params: { username: st
 
       if (createError) {
         console.error("Fehler beim Erstellen des Spielers:", createError)
-        throw createError
+        return NextResponse.json({ error: "Fehler beim Erstellen des Spielers" }, { status: 500 })
       }
       player = newPlayer
     } else if (playerError) {
       console.error("Fehler beim Abrufen des Spielers:", playerError)
-      throw playerError
+      return NextResponse.json({ error: "Fehler beim Abrufen des Spielers" }, { status: 500 })
     }
 
     // Einstellungen abrufen
@@ -46,16 +55,13 @@ export async function GET(request: Request, { params }: { params: { username: st
       .select("setting_name, setting_value")
       .eq("player_id", player.id)
 
-    if (settingsError) {
-      console.error("Fehler beim Abrufen der Einstellungen:", settingsError)
-      // Nicht kritisch, weiter machen
-    }
-
     // Einstellungen in ein Objekt umwandeln
     const settings: Record<string, boolean> = {}
-    settingsData?.forEach((setting) => {
-      settings[setting.setting_name] = setting.setting_value
-    })
+    if (settingsData) {
+      settingsData.forEach((setting) => {
+        settings[setting.setting_name] = setting.setting_value
+      })
+    }
 
     // Bans abrufen
     const { data: bansData, error: bansError } = await supabase
@@ -64,21 +70,16 @@ export async function GET(request: Request, { params }: { params: { username: st
       .eq("player_id", player.id)
       .order("banned_at", { ascending: false })
 
-    if (bansError) {
-      console.error("Fehler beim Abrufen der Bans:", bansError)
-      // Nicht kritisch, weiter machen
-    }
-
     return NextResponse.json({
       player,
       settings,
       bans: bansData || [],
     })
   } catch (error) {
-    console.error("Fehler beim Abrufen der Spielerdaten:", error)
+    console.error("Unerwarteter Fehler:", error)
     return NextResponse.json(
       {
-        error: "Fehler beim Abrufen der Spielerdaten",
+        error: "Unerwarteter Fehler beim Abrufen der Spielerdaten",
         details: error instanceof Error ? error.message : "Unbekannter Fehler",
       },
       { status: 500 },
