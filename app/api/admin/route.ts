@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createServerSupabaseClient } from "../../../lib/supabase"
 
 // Hilfsfunktion zur Überprüfung der Moderator-Berechtigung
 async function isModeratorOrAdmin(supabase: any, userId: string) {

@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react"
 
-export default function Countdown() {
+interface CountdownProps {
+  targetDate: string
+}
+
+export default function Countdown({ targetDate }: CountdownProps) {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -11,18 +15,10 @@ export default function Countdown() {
   })
 
   useEffect(() => {
-    // Target date: This Friday at 20:00 (German time)
-    const today = new Date()
-    const targetDay = new Date(today)
-    const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    const daysUntilFriday = dayOfWeek <= 5 ? 5 - dayOfWeek : 7 - dayOfWeek + 5
-
-    targetDay.setDate(today.getDate() + daysUntilFriday)
-    targetDay.setHours(20, 0, 0, 0) // 20:00:00.000
-
-    const calculateTimeLeft = () => {
-      const now = new Date()
-      const difference = targetDay.getTime() - now.getTime()
+    const interval = setInterval(() => {
+      const now = new Date().getTime()
+      const target = new Date(targetDate).getTime()
+      const difference = target - now
 
       if (difference > 0) {
         setTimeLeft({
@@ -32,46 +28,24 @@ export default function Countdown() {
           seconds: Math.floor((difference % (1000 * 60)) / 1000),
         })
       } else {
-        // Countdown finished
+        clearInterval(interval)
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
       }
-    }
+    }, 1000)
 
-    calculateTimeLeft()
-    const timer = setInterval(calculateTimeLeft, 1000)
-
-    return () => clearInterval(timer)
-  }, [])
+    return () => clearInterval(interval)
+  }, [targetDate])
 
   return (
-    <div className="mb-6 text-center">
-      <h2 className="text-xl font-bold mb-3 text-blue-400">Server Start:</h2>
-      <div className="flex justify-center space-x-4">
-        <div className="text-center">
-          <div className="bg-gray-800 rounded-lg p-3 min-w-[70px]">
-            <span className="text-3xl font-bold text-blue-400">{timeLeft.days}</span>
+    <div className="flex justify-center space-x-4">
+      {Object.entries(timeLeft).map(([unit, value]) => (
+        <div key={unit} className="flex flex-col items-center">
+          <div className="bg-gray-800 rounded-lg p-3 w-20 h-20 flex items-center justify-center border border-gray-700">
+            <span className="text-2xl font-bold">{value.toString().padStart(2, "0")}</span>
           </div>
-          <span className="text-sm text-gray-400 mt-1">Tage</span>
+          <div className="text-xs mt-2 text-gray-400 capitalize">{unit}</div>
         </div>
-        <div className="text-center">
-          <div className="bg-gray-800 rounded-lg p-3 min-w-[70px]">
-            <span className="text-3xl font-bold text-blue-400">{timeLeft.hours}</span>
-          </div>
-          <span className="text-sm text-gray-400 mt-1">Stunden</span>
-        </div>
-        <div className="text-center">
-          <div className="bg-gray-800 rounded-lg p-3 min-w-[70px]">
-            <span className="text-3xl font-bold text-blue-400">{timeLeft.minutes}</span>
-          </div>
-          <span className="text-sm text-gray-400 mt-1">Minuten</span>
-        </div>
-        <div className="text-center">
-          <div className="bg-gray-800 rounded-lg p-3 min-w-[70px]">
-            <span className="text-3xl font-bold text-blue-400">{timeLeft.seconds}</span>
-          </div>
-          <span className="text-sm text-gray-400 mt-1">Sekunden</span>
-        </div>
-      </div>
+      ))}
     </div>
   )
 }
