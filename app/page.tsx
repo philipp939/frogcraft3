@@ -4,10 +4,10 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Gamepad2, Trophy, Coins } from "lucide-react"
+import { Gamepad2, Trophy, Coins, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 interface LeaderboardPlayer {
   username: string
@@ -15,13 +15,23 @@ interface LeaderboardPlayer {
   bounty?: number
 }
 
+interface PlayerData {
+  username: string
+  uuid: string
+  kills: number
+  bounty: number
+  last_seen: string
+  created_at: string
+}
+
 export default function HomePage() {
   const [killsLeaderboard, setKillsLeaderboard] = useState<LeaderboardPlayer[]>([])
   const [bountyLeaderboard, setBountyLeaderboard] = useState<LeaderboardPlayer[]>([])
-  const [username, setUsername] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [searchUsername, setSearchUsername] = useState("")
+  const [playerData, setPlayerData] = useState<PlayerData | null>(null)
+  const [searchError, setSearchError] = useState("")
+  const [isSearching, setIsSearching] = useState(false)
+  const [error, setError] = useState(false) // Declare the error variable
 
   // Leaderboards laden (nur Top 5)
   useEffect(() => {
@@ -45,29 +55,42 @@ export default function HomePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!username) {
-      setError("Bitte gib deinen Minecraft-Namen ein.")
+    if (!searchUsername.trim()) {
+      setSearchError("Bitte gib deinen Minecraft-Namen ein.")
+      setError(true) // Set error to true
       return
     }
 
-    setIsLoading(true)
-    setError(null)
+    setIsSearching(true)
+    setSearchError("")
+    setPlayerData(null)
+    setError(false) // Set error to false
 
     try {
-      // Spieler suchen oder erstellen
-      const response = await fetch(`/api/players/${encodeURIComponent(username)}`)
+      const response = await fetch(`/api/players/${encodeURIComponent(searchUsername.trim())}`)
+      const data = await response.json()
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Ein Fehler ist aufgetreten")
+      if (response.ok) {
+        setPlayerData(data.player)
+      } else {
+        setSearchError(data.error || "Spieler nicht gefunden")
+        setError(true) // Set error to true
       }
-
-      // Zur Spieler-Seite weiterleiten
-      router.push(`/player/${encodeURIComponent(username.toLowerCase())}`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten")
+    } catch (error) {
+      console.error("Fehler bei der Spielersuche:", error)
+      setSearchError("Ein Fehler ist aufgetreten")
+      setError(true) // Set error to true
     } finally {
-      setIsLoading(false)
+      setIsSearching(false)
+    }
+  }
+
+  const handleAdminClick = () => {
+    const password = prompt("Admin-Passwort eingeben:")
+    if (password === "kahba") {
+      window.location.href = "/admin"
+    } else if (password) {
+      alert("Falsches Passwort!")
     }
   }
 
@@ -82,9 +105,9 @@ export default function HomePage() {
               <h1 className="text-2xl font-bold text-white">FrogCraft</h1>
             </div>
             <nav className="flex items-center space-x-4">
-              <Link href="/admin" className="text-white hover:text-purple-300 transition-colors">
+              <button onClick={handleAdminClick} className="text-white hover:text-purple-300 transition-colors">
                 Admin
-              </Link>
+              </button>
             </nav>
           </div>
         </div>
@@ -107,28 +130,40 @@ export default function HomePage() {
                 <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
                   Minecraft-Benutzername
                 </label>
-                <input
+                <Input
                   type="text"
                   id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={searchUsername}
+                  onChange={(e) => setSearchUsername(e.target.value)}
                   className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Dein Minecraft-Name"
-                  disabled={isLoading}
+                  disabled={isSearching}
                 />
               </div>
 
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isSearching}
                 className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Wird geladen..." : "Einstellungen anzeigen"}
+                <Search className="h-4 w-4 mr-2" />
+                {isSearching ? "Wird geladen..." : "Spieler suchen"}
               </Button>
 
               {error && (
                 <div className="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg">
-                  <p className="text-red-300 text-sm">{error}</p>
+                  <p className="text-red-300 text-sm">{searchError}</p>
+                </div>
+              )}
+
+              {playerData && (
+                <div className="mt-4 p-4 bg-purple-900/30 border border-purple-800 rounded-lg">
+                  <h4 className="text-lg font-bold text-white mb-2">{playerData.username}</h4>
+                  <div className="space-y-1 text-purple-200">
+                    <p>Kills: {playerData.kills}</p>
+                    <p>Bounty: {playerData.bounty}</p>
+                    <p>Zuletzt gesehen: {new Date(playerData.last_seen).toLocaleDateString("de-DE")}</p>
+                  </div>
                 </div>
               )}
             </form>

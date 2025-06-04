@@ -1,99 +1,48 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+import { createServerSupabaseClient } from "@/lib/supabase"
 
 export async function GET(request: Request, { params }: { params: { username: string } }) {
   try {
-    console.log("API aufgerufen für Username:", params.username)
+    console.log("API aufgerufen für Spieler:", params.username)
 
-    if (!params || !params.username) {
-      console.log("Kein Username bereitgestellt")
-      return NextResponse.json({ error: "Username ist erforderlich" }, { status: 400 })
-    }
+    const supabase = createServerSupabaseClient()
 
-    const username = params.username.toLowerCase().trim()
-    console.log("Verarbeiteter Username:", username)
-
-    if (!username) {
-      return NextResponse.json({ error: "Ungültiger Username" }, { status: 400 })
-    }
-
-    // Spieler abrufen oder erstellen
-    let { data: player, error: playerError } = await supabase
+    // Spieler in der Datenbank suchen
+    const { data: player, error } = await supabase
       .from("players")
       .select("*")
-      .eq("username", username)
+      .eq("username", params.username.toLowerCase())
       .single()
 
-    console.log("Spieler-Abfrage Ergebnis:", { player, playerError })
+    console.log("Supabase Antwort:", { player, error })
 
-    if (playerError && playerError.code === "PGRST116") {
-      // Spieler existiert nicht, erstellen
-      console.log("Erstelle neuen Spieler:", username)
-      const { data: newPlayer, error: createError } = await supabase
-        .from("players")
-        .insert([
-          {
-            username,
-            uuid: `offline-${username}-${Date.now()}`,
-            created_at: new Date().toISOString(),
-            kills: 0,
-            bounty: 0,
-          },
-        ])
-        .select()
-        .single()
-
-      if (createError) {
-        console.error("Fehler beim Erstellen des Spielers:", createError)
-        return NextResponse.json({ error: "Fehler beim Erstellen des Spielers" }, { status: 500 })
+    if (error) {
+      console.error("Supabase Fehler:", error)
+      if (error.code === "PGRST116") {
+        return NextResponse.json({ error: "Spieler nicht gefunden" }, { status: 404 })
       }
-      player = newPlayer
-      console.log("Neuer Spieler erstellt:", player)
-    } else if (playerError) {
-      console.error("Fehler beim Abrufen des Spielers:", playerError)
-      return NextResponse.json({ error: "Fehler beim Abrufen des Spielers" }, { status: 500 })
+      throw error
     }
 
-    // Einstellungen abrufen
-    const { data: settingsData, error: settingsError } = await supabase
-      .from("player_settings")
-      .select("setting_name, setting_value")
-      .eq("player_id", player.id)
-
-    console.log("Einstellungen-Abfrage:", { settingsData, settingsError })
-
-    // Einstellungen in ein Objekt umwandeln
-    const settings: Record<string, boolean> = {}
-    if (settingsData) {
-      settingsData.forEach((setting) => {
-        settings[setting.setting_name] = setting.setting_value
-      })
+    if (!player) {
+      return NextResponse.json({ error: "Spieler nicht gefunden" }, { status: 404 })
     }
 
-    // Bans abrufen
-    const { data: bansData, error: bansError } = await supabase
-      .from("bans")
-      .select("*")
-      .eq("player_id", player.id)
-      .order("banned_at", { ascending: false })
-
-    console.log("Bans-Abfrage:", { bansData, bansError })
-
-    const result = {
-      player,
-      settings,
-      bans: bansData || [],
-    }
-
-    console.log("API Antwort:", result)
-    return NextResponse.json(result)
+    return NextResponse.json({
+      player: {
+        username: player.username,
+        uuid: player.uuid,
+        kills: player.kills || 0,
+        bounty: player.bounty || 0,
+        last_seen: player.last_seen,
+        created_at: player.created_at,
+      },
+    })
   } catch (error) {
-    console.error("Unerwarteter Fehler in API:", error)
+    console.error("Fehler beim Abrufen der Spielerdaten:", error)
     return NextResponse.json(
       {
-        error: "Unerwarteter Fehler beim Abrufen der Spielerdaten",
+        error: "Ein Fehler ist aufgetreten beim Laden der Spielerdaten",
         details: error instanceof Error ? error.message : "Unbekannter Fehler",
       },
       { status: 500 },
