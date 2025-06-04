@@ -1,36 +1,46 @@
-import { NextResponse } from "next/server"
+// Datei: app/api/player/[username]/route.ts
+
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+// Supabase-Client mit env-Variablen
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+)
 
-export async function GET(request: Request, { params }: { params: { username: string } }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: { username: string } },
+) {
   try {
-    // Sicherstellen, dass params existiert
-    if (!params || !params.username) {
+    const { username } = context.params
+
+    if (!username) {
       return NextResponse.json({ error: "Username ist erforderlich" }, { status: 400 })
     }
 
-    const username = params.username.toLowerCase().trim()
+    const cleanUsername = username.toLowerCase().trim()
 
-    if (!username) {
+    if (!cleanUsername) {
       return NextResponse.json({ error: "Ungültiger Username" }, { status: 400 })
     }
 
-    // Spieler abrufen oder erstellen
+    // Spieler abrufen
     let { data: player, error: playerError } = await supabase
       .from("players")
       .select("*")
-      .eq("username", username)
+      .eq("username", cleanUsername)
       .single()
 
     if (playerError && playerError.code === "PGRST116") {
-      // Spieler existiert nicht, erstellen
+      // Spieler existiert nicht, neu erstellen
       const { data: newPlayer, error: createError } = await supabase
         .from("players")
         .insert([
           {
-            username,
-            uuid: `offline-${username}-${Date.now()}`,
+            username: cleanUsername,
+            uuid: `offline-${cleanUsername}-${Date.now()}`,
             created_at: new Date().toISOString(),
             kills: 0,
             bounty: 0,
@@ -40,31 +50,29 @@ export async function GET(request: Request, { params }: { params: { username: st
         .single()
 
       if (createError) {
-        console.error("Fehler beim Erstellen des Spielers:", createError)
+        console.error("Fehler beim Erstellen:", createError)
         return NextResponse.json({ error: "Fehler beim Erstellen des Spielers" }, { status: 500 })
       }
+
       player = newPlayer
     } else if (playerError) {
-      console.error("Fehler beim Abrufen des Spielers:", playerError)
-      return NextResponse.json({ error: "Fehler beim Abrufen des Spielers" }, { status: 500 })
+      console.error("Abruf-Fehler:", playerError)
+      return NextResponse.json({ error: "Fehler beim Abrufen" }, { status: 500 })
     }
 
     // Einstellungen abrufen
-    const { data: settingsData, error: settingsError } = await supabase
+    const { data: settingsData } = await supabase
       .from("player_settings")
       .select("setting_name, setting_value")
       .eq("player_id", player.id)
 
-    // Einstellungen in ein Objekt umwandeln
     const settings: Record<string, boolean> = {}
-    if (settingsData) {
-      settingsData.forEach((setting) => {
-        settings[setting.setting_name] = setting.setting_value
-      })
-    }
+    settingsData?.forEach((s) => {
+      settings[s.setting_name] = s.setting_value
+    })
 
     // Bans abrufen
-    const { data: bansData, error: bansError } = await supabase
+    const { data: bansData } = await supabase
       .from("bans")
       .select("*")
       .eq("player_id", player.id)
@@ -76,13 +84,14 @@ export async function GET(request: Request, { params }: { params: { username: st
       bans: bansData || [],
     })
   } catch (error) {
-    console.error("Unerwarteter Fehler:", error)
+    console.error("Fehler:", error)
     return NextResponse.json(
       {
-        error: "Unerwarteter Fehler beim Abrufen der Spielerdaten",
-        details: error instanceof Error ? error.message : "Unbekannter Fehler",
+        error: "Unerwarteter Fehler",
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },
     )
   }
 }
+
