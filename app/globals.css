@@ -3,6 +3,30 @@
 @tailwind utilities;
 
 :root {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
+  --chart-1: 220 70% 50%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
   --foreground-rgb: 255, 255, 255;
   --background-rgb: 17, 24, 39;
 }
@@ -18,6 +42,70 @@ body {
     "Open Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sicherstellen, dass alle Buttons abgerundet sind */
+.btn,
+button,
+.button,
+[role="button"] {
+  border-radius: 0.5rem !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+/* Spezifische Button-Klassen */
+.rounded-lg {
+  border-radius: 0.5rem !important;
+}
+
+.rounded-xl {
+  border-radius: 0.75rem !important;
+}
+
+.rounded-2xl {
+  border-radius: 1rem !important;
+}
+
+/* Countdown Styles */
+.countdown-container {
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.3), rgba(160, 82, 45, 0.3));
+  border: 1px solid rgba(139, 69, 19, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+}
+
+.countdown-digit {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(139, 69, 19, 0.3);
+  border-radius: 0.5rem;
+  min-width: 4rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #d2691e;
+}
+
+/* Leaderboard Styles */
+.leaderboard-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+}
+
+.leaderboard-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.leaderboard-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
 /* Scrollbar styling */
@@ -49,4 +137,48 @@ a:focus {
 button:focus:not(:focus-visible),
 a:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .countdown-digit {
+    min-width: 3rem;
+    height: 3rem;
+    font-size: 1.25rem;
+  }
+}
+
+/* Animation für Countdown */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.countdown-separator {
+  animation: pulse 2s infinite;
+  color: #d2691e;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Card Styles */
+.card {
+  border-radius: 0.75rem !important;
+}
+
+/* Input Styles */
+input,
+textarea,
+select {
+  border-radius: 0.5rem !important;
+}
+
+/* Badge Styles */
+.badge {
+  border-radius: 9999px !important;
 }

@@ -1,9 +1,69 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Users, Shield, Settings, BarChart3, Gamepad2, Crown } from "lucide-react"
+import { Users, Shield, Settings, BarChart3, Gamepad2, Crown, Trophy, Coins } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+interface LeaderboardPlayer {
+  username: string
+  kills?: number
+  bounty?: number
+}
+
 export default function HomePage() {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  })
+  const [killsLeaderboard, setKillsLeaderboard] = useState<LeaderboardPlayer[]>([])
+  const [bountyLeaderboard, setBountyLeaderboard] = useState<LeaderboardPlayer[]>([])
+
+  // Countdown bis 22.07.2025 20:00
+  useEffect(() => {
+    const targetDate = new Date("2025-07-22T20:00:00").getTime()
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime()
+      const difference = targetDate - now
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        })
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+        clearInterval(interval)
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Leaderboards laden
+  useEffect(() => {
+    const loadLeaderboards = async () => {
+      try {
+        const response = await fetch("/api/leaderboard")
+        if (response.ok) {
+          const data = await response.json()
+          setKillsLeaderboard(data.kills || [])
+          setBountyLeaderboard(data.bounty || [])
+        }
+      } catch (error) {
+        console.error("Fehler beim Laden der Leaderboards:", error)
+      }
+    }
+
+    loadLeaderboards()
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
@@ -31,7 +91,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section mit Countdown */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <h2 className="text-5xl font-bold text-white mb-6">
@@ -40,6 +100,33 @@ export default function HomePage() {
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             Dein ultimatives Minecraft-Erlebnis mit erweiterten Features, Spielerverwaltung und Community-Tools.
           </p>
+
+          {/* Countdown */}
+          <div className="countdown-container p-8 mb-8 max-w-2xl mx-auto">
+            <h3 className="text-2xl font-bold text-white mb-4">Server Start Countdown</h3>
+            <div className="flex justify-center space-x-4">
+              <div className="text-center">
+                <div className="countdown-digit">{timeLeft.days.toString().padStart(2, "0")}</div>
+                <div className="text-sm text-gray-300 mt-2">Tage</div>
+              </div>
+              <div className="countdown-separator flex items-center">:</div>
+              <div className="text-center">
+                <div className="countdown-digit">{timeLeft.hours.toString().padStart(2, "0")}</div>
+                <div className="text-sm text-gray-300 mt-2">Stunden</div>
+              </div>
+              <div className="countdown-separator flex items-center">:</div>
+              <div className="text-center">
+                <div className="countdown-digit">{timeLeft.minutes.toString().padStart(2, "0")}</div>
+                <div className="text-sm text-gray-300 mt-2">Minuten</div>
+              </div>
+              <div className="countdown-separator flex items-center">:</div>
+              <div className="text-center">
+                <div className="countdown-digit">{timeLeft.seconds.toString().padStart(2, "0")}</div>
+                <div className="text-sm text-gray-300 mt-2">Sekunden</div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/dashboard">
               <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white">
@@ -57,6 +144,88 @@ export default function HomePage() {
                 Admin Panel
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Leaderboards */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
+          <h3 className="text-3xl font-bold text-white text-center mb-12">Leaderboards</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {/* Kills Leaderboard */}
+            <div className="leaderboard-card p-6">
+              <div className="flex items-center mb-6">
+                <Trophy className="h-6 w-6 text-red-400 mr-2" />
+                <h4 className="text-xl font-bold text-white">Top Kills</h4>
+              </div>
+              <div className="space-y-3">
+                {killsLeaderboard.length > 0 ? (
+                  killsLeaderboard.slice(0, 5).map((player, index) => (
+                    <div key={player.username} className="leaderboard-item p-3 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div
+                          className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
+                            index === 0
+                              ? "bg-yellow-500 text-black rounded-full"
+                              : index === 1
+                                ? "bg-gray-400 text-black rounded-full"
+                                : index === 2
+                                  ? "bg-amber-600 text-black rounded-full"
+                                  : "bg-gray-600 text-white rounded-full"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className="text-white font-medium">{player.username}</span>
+                      </div>
+                      <span className="text-red-400 font-bold">{player.kills || 0} Kills</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-400 py-8">
+                    <p>Noch keine Daten verfügbar</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bounty Leaderboard */}
+            <div className="leaderboard-card p-6">
+              <div className="flex items-center mb-6">
+                <Coins className="h-6 w-6 text-yellow-400 mr-2" />
+                <h4 className="text-xl font-bold text-white">Top Bounty</h4>
+              </div>
+              <div className="space-y-3">
+                {bountyLeaderboard.length > 0 ? (
+                  bountyLeaderboard.slice(0, 5).map((player, index) => (
+                    <div key={player.username} className="leaderboard-item p-3 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div
+                          className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
+                            index === 0
+                              ? "bg-yellow-500 text-black rounded-full"
+                              : index === 1
+                                ? "bg-gray-400 text-black rounded-full"
+                                : index === 2
+                                  ? "bg-amber-600 text-black rounded-full"
+                                  : "bg-gray-600 text-white rounded-full"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className="text-white font-medium">{player.username}</span>
+                      </div>
+                      <span className="text-yellow-400 font-bold">{player.bounty || 0} Coins</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-400 py-8">
+                    <p>Noch keine Daten verfügbar</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -164,7 +333,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-white/10">
         <div className="container mx-auto text-center text-gray-400">
-          <p>&copy; 2024 FrogCraft. Alle Rechte vorbehalten.</p>
+          <p>&copy; 2025 FrogCraft. Alle Rechte vorbehalten.</p>
         </div>
       </footer>
     </div>

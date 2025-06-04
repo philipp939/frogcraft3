@@ -7,14 +7,23 @@ export async function GET() {
   try {
     const { data: players, error } = await supabase
       .from("players")
-      .select("*")
+      .select("id, username, uuid, created_at, last_login, is_online, kills, bounty")
       .order("created_at", { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error("Fehler beim Abrufen der Spieler:", error)
+      throw error
+    }
 
-    return NextResponse.json({ players })
+    return NextResponse.json({ players: players || [] })
   } catch (error) {
     console.error("Fehler beim Abrufen der Spieler:", error)
-    return NextResponse.json({ error: "Fehler beim Abrufen der Spieler" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Fehler beim Abrufen der Spieler",
+        details: error instanceof Error ? error.message : "Unbekannter Fehler",
+      },
+      { status: 500 },
+    )
   }
 }

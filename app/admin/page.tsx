@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, Shield, Plus, Trash2, Crown, Gamepad2, Calendar } from "lucide-react"
+import { Users, Shield, Plus, Trash2, Crown, Gamepad2, Calendar, Lock } from "lucide-react"
 import Link from "next/link"
 
 interface Player {
@@ -19,6 +21,8 @@ interface Player {
   created_at: string
   last_login: string
   is_online: boolean
+  kills: number
+  bounty: number
 }
 
 interface Ban {
@@ -34,6 +38,8 @@ interface Ban {
 }
 
 export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [password, setPassword] = useState("")
   const [players, setPlayers] = useState<Player[]>([])
   const [bans, setBans] = useState<Ban[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -48,9 +54,15 @@ export default function AdminPage() {
     bannedBy: "Admin",
   })
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (password === "kahba") {
+      setIsAuthenticated(true)
+      loadData()
+    } else {
+      setMessage({ type: "error", text: "Falsches Passwort!" })
+    }
+  }
 
   const loadData = async () => {
     try {
@@ -122,6 +134,53 @@ export default function AdminPage() {
     return new Date(dateString).toLocaleString("de-DE")
   }
 
+  // Passwort-Eingabe anzeigen, wenn nicht authentifiziert
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <Card className="w-full max-w-md bg-black/40 border-white/10 backdrop-blur-sm">
+          <CardHeader className="text-center">
+            <CardTitle className="text-white flex items-center justify-center">
+              <Lock className="h-6 w-6 mr-2" />
+              Admin-Zugang
+            </CardTitle>
+            <CardDescription className="text-gray-400">Passwort eingeben um fortzufahren</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="password" className="text-gray-300">
+                  Passwort
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-black/20 border-white/20 text-white rounded-lg"
+                  placeholder="Passwort eingeben..."
+                />
+              </div>
+              <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 rounded-lg">
+                Anmelden
+              </Button>
+            </form>
+            {message && (
+              <div className="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg">
+                <p className="text-red-300 text-sm">{message.text}</p>
+              </div>
+            )}
+            <div className="mt-4 text-center">
+              <Link href="/" className="text-purple-400 hover:text-purple-300 text-sm">
+                Zurück zur Startseite
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -140,12 +199,21 @@ export default function AdminPage() {
               <Crown className="h-8 w-8 text-purple-400" />
               <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
             </Link>
-            <Link href="/dashboard">
-              <Button variant="ghost" className="text-white hover:text-purple-300">
-                <Gamepad2 className="h-4 w-4 mr-2" />
-                Dashboard
+            <div className="flex items-center space-x-4">
+              <Link href="/dashboard">
+                <Button variant="ghost" className="text-white hover:text-purple-300 rounded-lg">
+                  <Gamepad2 className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                onClick={() => setIsAuthenticated(false)}
+                className="text-white hover:text-red-300 rounded-lg"
+              >
+                Abmelden
               </Button>
-            </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -163,8 +231,8 @@ export default function AdminPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Gesamt Spieler</CardTitle>
               <Users className="h-4 w-4 text-purple-400" />
@@ -175,7 +243,7 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Aktive Bans</CardTitle>
               <Shield className="h-4 w-4 text-red-400" />
@@ -186,7 +254,7 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Heute registriert</CardTitle>
               <Calendar className="h-4 w-4 text-green-400" />
@@ -204,23 +272,36 @@ export default function AdminPage() {
               <p className="text-xs text-gray-400">Neue Spieler</p>
             </CardContent>
           </Card>
+
+          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Total Kills</CardTitle>
+              <Shield className="h-4 w-4 text-yellow-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {players.reduce((total, player) => total + (player.kills || 0), 0)}
+              </div>
+              <p className="text-xs text-gray-400">Server-weit</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content */}
         <Tabs defaultValue="players" className="space-y-6">
-          <TabsList className="bg-black/40 border-white/10">
-            <TabsTrigger value="players" className="data-[state=active]:bg-purple-600">
+          <TabsList className="bg-black/40 border-white/10 rounded-lg">
+            <TabsTrigger value="players" className="data-[state=active]:bg-purple-600 rounded-lg">
               <Users className="h-4 w-4 mr-2" />
               Spieler ({players.length})
             </TabsTrigger>
-            <TabsTrigger value="bans" className="data-[state=active]:bg-purple-600">
+            <TabsTrigger value="bans" className="data-[state=active]:bg-purple-600 rounded-lg">
               <Shield className="h-4 w-4 mr-2" />
               Bans ({bans.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="players">
-            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+            <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-white">Spieler-Verwaltung</CardTitle>
                 <CardDescription className="text-gray-400">Übersicht über alle registrierten Spieler</CardDescription>
@@ -235,7 +316,7 @@ export default function AdminPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <p className="text-white font-medium">{player.username}</p>
-                          <Badge variant={player.is_online ? "default" : "secondary"}>
+                          <Badge variant={player.is_online ? "default" : "secondary"} className="rounded-full">
                             {player.is_online ? "Online" : "Offline"}
                           </Badge>
                         </div>
@@ -243,10 +324,14 @@ export default function AdminPage() {
                         <p className="text-gray-400 text-sm">
                           Letzter Login: {player.last_login ? formatDate(player.last_login) : "Nie"}
                         </p>
+                        <div className="flex gap-4 text-sm">
+                          <span className="text-red-400">Kills: {player.kills || 0}</span>
+                          <span className="text-yellow-400">Bounty: {player.bounty || 0}</span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Link href={`/dashboard?search=${player.username}`}>
-                          <Button variant="outline" size="sm" className="border-white/20 text-white">
+                          <Button variant="outline" size="sm" className="border-white/20 text-white rounded-lg">
                             Details
                           </Button>
                         </Link>
@@ -261,7 +346,7 @@ export default function AdminPage() {
           <TabsContent value="bans">
             <div className="space-y-6">
               {/* Create Ban */}
-              <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+              <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center">
                     <Plus className="h-5 w-5 mr-2" />
@@ -279,7 +364,7 @@ export default function AdminPage() {
                         placeholder="Spielername"
                         value={banForm.username}
                         onChange={(e) => setBanForm((prev) => ({ ...prev, username: e.target.value }))}
-                        className="bg-black/20 border-white/20 text-white"
+                        className="bg-black/20 border-white/20 text-white rounded-lg"
                       />
                     </div>
                     <div>
@@ -290,10 +375,10 @@ export default function AdminPage() {
                         value={banForm.banType}
                         onValueChange={(value) => setBanForm((prev) => ({ ...prev, banType: value }))}
                       >
-                        <SelectTrigger className="bg-black/20 border-white/20 text-white">
+                        <SelectTrigger className="bg-black/20 border-white/20 text-white rounded-lg">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-black border-white/20 rounded-lg">
                           <SelectItem value="temporary">Temporär</SelectItem>
                           <SelectItem value="permanent">Permanent</SelectItem>
                         </SelectContent>
@@ -310,7 +395,7 @@ export default function AdminPage() {
                         value={banForm.duration}
                         onChange={(e) => setBanForm((prev) => ({ ...prev, duration: e.target.value }))}
                         disabled={banForm.banType === "permanent"}
-                        className="bg-black/20 border-white/20 text-white"
+                        className="bg-black/20 border-white/20 text-white rounded-lg"
                       />
                     </div>
                     <div>
@@ -322,11 +407,11 @@ export default function AdminPage() {
                         placeholder="Admin"
                         value={banForm.bannedBy}
                         onChange={(e) => setBanForm((prev) => ({ ...prev, bannedBy: e.target.value }))}
-                        className="bg-black/20 border-white/20 text-white"
+                        className="bg-black/20 border-white/20 text-white rounded-lg"
                       />
                     </div>
                     <div className="flex items-end">
-                      <Button onClick={createBan} className="w-full bg-red-600 hover:bg-red-700">
+                      <Button onClick={createBan} className="w-full bg-red-600 hover:bg-red-700 rounded-lg">
                         Ban erstellen
                       </Button>
                     </div>
@@ -340,14 +425,14 @@ export default function AdminPage() {
                       placeholder="Grund für den Ban..."
                       value={banForm.reason}
                       onChange={(e) => setBanForm((prev) => ({ ...prev, reason: e.target.value }))}
-                      className="bg-black/20 border-white/20 text-white"
+                      className="bg-black/20 border-white/20 text-white rounded-lg"
                     />
                   </div>
                 </CardContent>
               </Card>
 
               {/* Bans List */}
-              <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+              <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
                 <CardHeader>
                   <CardTitle className="text-white">Ban-Liste</CardTitle>
                   <CardDescription className="text-gray-400">Übersicht über alle Bans</CardDescription>
@@ -368,10 +453,10 @@ export default function AdminPage() {
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
                                 <p className="text-white font-medium">{ban.player.username}</p>
-                                <Badge variant={ban.is_active ? "destructive" : "secondary"}>
+                                <Badge variant={ban.is_active ? "destructive" : "secondary"} className="rounded-full">
                                   {ban.is_active ? "Aktiv" : "Abgelaufen"}
                                 </Badge>
-                                <Badge variant="outline" className="border-white/20 text-white">
+                                <Badge variant="outline" className="border-white/20 text-white rounded-full">
                                   {ban.ban_type === "permanent" ? "Permanent" : "Temporär"}
                                 </Badge>
                               </div>
@@ -386,7 +471,7 @@ export default function AdminPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => removeBan(ban.id)}
-                              className="border-red-500/50 text-red-400 hover:bg-red-500/20"
+                              className="border-red-500/50 text-red-400 hover:bg-red-500/20 rounded-lg"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

@@ -21,16 +21,22 @@ export async function GET(request: Request, { params }: { params: { username: st
         .insert([
           {
             username,
-            uuid: `offline-${username}-${Date.now()}`, // Temporäre UUID für Offline-Spieler
+            uuid: `offline-${username}-${Date.now()}`,
             created_at: new Date().toISOString(),
+            kills: 0,
+            bounty: 0,
           },
         ])
         .select()
         .single()
 
-      if (createError) throw createError
+      if (createError) {
+        console.error("Fehler beim Erstellen des Spielers:", createError)
+        throw createError
+      }
       player = newPlayer
     } else if (playerError) {
+      console.error("Fehler beim Abrufen des Spielers:", playerError)
       throw playerError
     }
 
@@ -40,7 +46,10 @@ export async function GET(request: Request, { params }: { params: { username: st
       .select("setting_name, setting_value")
       .eq("player_id", player.id)
 
-    if (settingsError) throw settingsError
+    if (settingsError) {
+      console.error("Fehler beim Abrufen der Einstellungen:", settingsError)
+      // Nicht kritisch, weiter machen
+    }
 
     // Einstellungen in ein Objekt umwandeln
     const settings: Record<string, boolean> = {}
@@ -55,7 +64,10 @@ export async function GET(request: Request, { params }: { params: { username: st
       .eq("player_id", player.id)
       .order("banned_at", { ascending: false })
 
-    if (bansError) throw bansError
+    if (bansError) {
+      console.error("Fehler beim Abrufen der Bans:", bansError)
+      // Nicht kritisch, weiter machen
+    }
 
     return NextResponse.json({
       player,
@@ -64,6 +76,12 @@ export async function GET(request: Request, { params }: { params: { username: st
     })
   } catch (error) {
     console.error("Fehler beim Abrufen der Spielerdaten:", error)
-    return NextResponse.json({ error: "Fehler beim Abrufen der Spielerdaten" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Fehler beim Abrufen der Spielerdaten",
+        details: error instanceof Error ? error.message : "Unbekannter Fehler",
+      },
+      { status: 500 },
+    )
   }
 }
