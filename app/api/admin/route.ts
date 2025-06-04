@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+import { createServerSupabaseClient } from "@supabase/supabase-js"
 
 // Hilfsfunktion zur Überprüfung der Moderator-Berechtigung
 async function isModeratorOrAdmin(supabase: any, userId: string) {
@@ -17,6 +15,8 @@ async function isModeratorOrAdmin(supabase: any, userId: string) {
 // GET: Admin-Daten abrufen
 export async function GET(request: Request) {
   try {
+    const supabase = createServerSupabaseClient()
+
     // Alle Spieler abrufen
     const { data: players, error: playersError } = await supabase.from("players").select("*").order("username")
 
@@ -66,7 +66,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { action, data } = body
+    const { action, password, data } = body
+
+    // Passwort prüfen
+    if (password !== "kahba") {
+      return NextResponse.json({ error: "Falsches Passwort" }, { status: 401 })
+    }
+
+    const supabase = createServerSupabaseClient()
 
     // Verschiedene Admin-Aktionen
     switch (action) {
