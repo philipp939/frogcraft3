@@ -5,9 +5,9 @@ interface PlayerStatsProps {
     playtime_minutes: number
     deaths: number
     kills: number
-    blocks_broken: number
-    blocks_placed: number
-    last_updated: string
+    bounty: number
+    joined_at: string
+    last_seen: string
   }
 }
 
@@ -65,18 +65,18 @@ export default function PlayerStats({ stats }: PlayerStatsProps) {
 
         <div className="space-y-2">
           <div className="flex justify-between">
-            <span className="text-gray-400">Blöcke abgebaut:</span>
-            <span>{stats.blocks_broken || 0}</span>
+            <span className="text-gray-400">Bounty:</span>
+            <span>{stats.bounty || 0} Coins</span>
           </div>
 
           <div className="flex justify-between">
-            <span className="text-gray-400">Blöcke platziert:</span>
-            <span>{stats.blocks_placed || 0}</span>
+            <span className="text-gray-400">Beigetreten:</span>
+            <span>{formatDate(stats.joined_at)}</span>
           </div>
 
           <div className="flex justify-between">
-            <span className="text-gray-400">Zuletzt aktualisiert:</span>
-            <span>{formatDate(stats.last_updated)}</span>
+            <span className="text-gray-400">Zuletzt gesehen:</span>
+            <span>{formatDate(stats.last_seen)}</span>
           </div>
         </div>
       </div>

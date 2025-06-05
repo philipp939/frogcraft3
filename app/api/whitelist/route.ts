@@ -1,44 +1,48 @@
 import { NextResponse } from "next/server"
-import path from "path"
-import { exec } from "child_process"
-import { promisify } from "util"
-
-// Konvertiere exec zu einer Promise-basierten Funktion
-const execAsync = promisify(exec)
-
-// Konfiguration - diese Werte solltest du in einer .env-Datei speichern
-const MINECRAFT_SERVER_PATH = process.env.MINECRAFT_SERVER_PATH || "/path/to/your/minecraft/server"
-const WHITELIST_PATH = path.join(MINECRAFT_SERVER_PATH, "whitelist.json")
-const SCREEN_SESSION_NAME = process.env.MINECRAFT_SCREEN_SESSION || "minecraft"
-const API_SECRET_KEY = process.env.API_SECRET_KEY || "dein-geheimer-schlüssel"
-
-// Funktion zum Überprüfen der Anfrage-Authentifizierung
-function isAuthorized(request: Request) {
-  const authHeader = request.headers.get("authorization")
-  return authHeader === `Bearer ${API_SECRET_KEY}`
-}
+import { createServerSupabaseClient } from "@/lib/supabase"
 
 export async function POST(request: Request) {
   try {
-    // Überprüfe die Authentifizierung
-    if (!isAuthorized(request)) {
-      return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
-    }
-
-    // Lese den Request-Body
     const body = await request.json()
-    const { username, discordTag } = body
+    const { username } = body
 
     // Validiere die Eingaben
-    if (!username || !discordTag) {
-      return NextResponse.json({ error: "Minecraft-Benutzername und Discord-Tag sind erforderlich" }, { status: 400 })
+    if (!username) {
+      return NextResponse.json({ error: "Minecraft-Benutzername ist erforderlich" }, { status: 400 })
     }
 
-    // Einfache Bestätigung - in der Realität würdest du das in einer Datenbank speichern
-    console.log(`Whitelist-Anfrage: ${username} (${discordTag})`)
+    const supabase = createServerSupabaseClient()
+
+    // Überprüfe, ob der Spieler bereits existiert
+    const { data: existingPlayer } = await supabase
+      .from("players")
+      .select("username")
+      .eq("username", username.toLowerCase())
+      .single()
+
+    if (existingPlayer) {
+      return NextResponse.json({ error: "Spieler ist bereits registriert" }, { status: 400 })
+    }
+
+    // Spieler zur Datenbank hinzufügen
+    const { error: insertError } = await supabase.from("players").insert([
+      {
+        username: username.toLowerCase(),
+        joined_at: new Date().toISOString(),
+        last_seen: new Date().toISOString(),
+        playtime_minutes: 0,
+        pvp_enabled: false,
+        verified: false,
+        deaths: 0,
+        kills: 0,
+        bounty: 0,
+      },
+    ])
+
+    if (insertError) throw insertError
 
     return NextResponse.json({
-      message: "Deine Anfrage wurde erfolgreich eingereicht und wird überprüft.",
+      message: "Du wurdest erfolgreich zur Whitelist hinzugefügt!",
     })
   } catch (error) {
     console.error("Fehler bei der Whitelist-Anfrage:", error)

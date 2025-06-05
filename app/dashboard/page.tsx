@@ -7,37 +7,25 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, User, Settings, Shield, Clock, Gamepad2 } from "lucide-react"
+import { Search, User, Settings, Gamepad2 } from "lucide-react"
 import Link from "next/link"
 
 interface Player {
-  id: number
-  username: string
   uuid: string
-  created_at: string
-  last_login: string
-  is_online: boolean
-}
-
-interface PlayerSettings {
-  [key: string]: boolean
-}
-
-interface Ban {
-  id: number
-  reason: string
-  banned_by: string
-  banned_at: string
-  expires_at: string | null
-  is_active: boolean
-  ban_type: string
+  username: string
+  joined_at: string
+  last_seen: string
+  playtime_minutes: number
+  pvp_enabled: boolean
+  verified: boolean
+  deaths: number
+  kills: number
+  bounty: number
 }
 
 export default function DashboardPage() {
   const [searchUsername, setSearchUsername] = useState("")
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null)
-  const [playerSettings, setPlayerSettings] = useState<PlayerSettings>({})
-  const [playerBans, setPlayerBans] = useState<Ban[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -56,8 +44,6 @@ export default function DashboardPage() {
 
       const data = await response.json()
       setCurrentPlayer(data.player)
-      setPlayerSettings(data.settings)
-      setPlayerBans(data.bans || [])
     } catch (error) {
       setMessage({
         type: "error",
@@ -82,7 +68,7 @@ export default function DashboardPage() {
         throw new Error("Fehler beim Aktualisieren der Einstellung")
       }
 
-      setPlayerSettings((prev) => ({ ...prev, [settingName]: value }))
+      setCurrentPlayer((prev) => (prev ? { ...prev, [settingName]: value } : null))
       setMessage({ type: "success", text: "Einstellung erfolgreich aktualisiert" })
     } catch (error) {
       setMessage({
@@ -93,7 +79,14 @@ export default function DashboardPage() {
   }
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return "Nie"
     return new Date(dateString).toLocaleString("de-DE")
+  }
+
+  const formatPlaytime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours}h ${mins}m`
   }
 
   return (
@@ -166,10 +159,6 @@ export default function DashboardPage() {
                 <Settings className="h-4 w-4 mr-2" />
                 Einstellungen
               </TabsTrigger>
-              <TabsTrigger value="bans" className="data-[state=active]:bg-purple-600">
-                <Shield className="h-4 w-4 mr-2" />
-                Bans
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -184,59 +173,59 @@ export default function DashboardPage() {
                       <span className="text-white">{currentPlayer.username}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Status:</span>
-                      <Badge variant={currentPlayer.is_online ? "default" : "secondary"}>
-                        {currentPlayer.is_online ? "Online" : "Offline"}
+                      <span className="text-gray-400">Verifiziert:</span>
+                      <Badge variant={currentPlayer.verified ? "default" : "secondary"}>
+                        {currentPlayer.verified ? "Ja" : "Nein"}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Registriert:</span>
-                      <span className="text-white">{formatDate(currentPlayer.created_at)}</span>
+                      <span className="text-gray-400">Beigetreten:</span>
+                      <span className="text-white">{formatDate(currentPlayer.joined_at)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Letzter Login:</span>
-                      <span className="text-white">
-                        {currentPlayer.last_login ? formatDate(currentPlayer.last_login) : "Nie"}
-                      </span>
+                      <span className="text-gray-400">Zuletzt gesehen:</span>
+                      <span className="text-white">{formatDate(currentPlayer.last_seen)}</span>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-white">Schnell-Einstellungen</CardTitle>
+                    <CardTitle className="text-white">Statistiken</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-300">PVP</span>
-                      <Switch
-                        checked={playerSettings.pvp_enabled || false}
-                        onCheckedChange={(checked) => updateSetting("pvp_enabled", checked)}
-                      />
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Spielzeit:</span>
+                      <span className="text-white">{formatPlaytime(currentPlayer.playtime_minutes)}</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-300">Teleport-Schutz</span>
-                      <Switch
-                        checked={playerSettings.teleport_protection || false}
-                        onCheckedChange={(checked) => updateSetting("teleport_protection", checked)}
-                      />
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Kills:</span>
+                      <span className="text-white">{currentPlayer.kills}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Tode:</span>
+                      <span className="text-white">{currentPlayer.deaths}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Bounty:</span>
+                      <span className="text-white">{currentPlayer.bounty || 0} Coins</span>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-white">Ban-Status</CardTitle>
+                    <CardTitle className="text-white">PVP-Status</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {playerBans.filter((ban) => ban.is_active).length > 0 ? (
-                      <Badge variant="destructive">Gebannt</Badge>
-                    ) : (
-                      <Badge variant="default" className="bg-green-600">
-                        Nicht gebannt
-                      </Badge>
-                    )}
-                    <p className="text-gray-400 text-sm mt-2">{playerBans.length} Ban(s) insgesamt</p>
+                    <Badge variant={currentPlayer.pvp_enabled ? "destructive" : "default"}>
+                      {currentPlayer.pvp_enabled ? "PVP Aktiviert" : "PVP Deaktiviert"}
+                    </Badge>
+                    <p className="text-gray-400 text-sm mt-2">
+                      {currentPlayer.pvp_enabled
+                        ? "Du kannst von anderen Spielern getötet werden"
+                        : "Du bist vor PVP geschützt"}
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -251,112 +240,27 @@ export default function DashboardPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-white">Kampf</h3>
-                      <div className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/10">
-                        <div>
-                          <p className="text-white">PVP aktiviert</p>
-                          <p className="text-sm text-gray-400">Ermöglicht es anderen Spielern, dich zu töten</p>
-                        </div>
-                        <Switch
-                          checked={playerSettings.pvp_enabled || false}
-                          onCheckedChange={(checked) => updateSetting("pvp_enabled", checked)}
-                        />
-                      </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/10">
+                    <div>
+                      <p className="text-white">PVP aktiviert</p>
+                      <p className="text-sm text-gray-400">Ermöglicht es anderen Spielern, dich zu töten</p>
                     </div>
-
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-white">Schutz</h3>
-                      <div className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/10">
-                        <div>
-                          <p className="text-white">Teleport-Schutz</p>
-                          <p className="text-sm text-gray-400">Verhindert ungewollte Teleportationen</p>
-                        </div>
-                        <Switch
-                          checked={playerSettings.teleport_protection || false}
-                          onCheckedChange={(checked) => updateSetting("teleport_protection", checked)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-white">Kommunikation</h3>
-                      <div className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/10">
-                        <div>
-                          <p className="text-white">Chat-Benachrichtigungen</p>
-                          <p className="text-sm text-gray-400">Erhalte Benachrichtigungen für wichtige Events</p>
-                        </div>
-                        <Switch
-                          checked={playerSettings.chat_notifications || false}
-                          onCheckedChange={(checked) => updateSetting("chat_notifications", checked)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-white">Sozial</h3>
-                      <div className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/10">
-                        <div>
-                          <p className="text-white">Freundschaftsanfragen</p>
-                          <p className="text-sm text-gray-400">
-                            Andere Spieler können dir Freundschaftsanfragen senden
-                          </p>
-                        </div>
-                        <Switch
-                          checked={playerSettings.friend_requests || false}
-                          onCheckedChange={(checked) => updateSetting("friend_requests", checked)}
-                        />
-                      </div>
-                    </div>
+                    <Switch
+                      checked={currentPlayer.pvp_enabled}
+                      onCheckedChange={(checked) => updateSetting("pvp_enabled", checked)}
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
-            <TabsContent value="bans">
-              <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-white">Ban-Historie</CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Übersicht über alle Bans für diesen Spieler
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {playerBans.length === 0 ? (
-                    <p className="text-gray-400 text-center py-8">Keine Bans vorhanden</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {playerBans.map((ban) => (
-                        <div
-                          key={ban.id}
-                          className={`p-4 rounded-lg border ${
-                            ban.is_active ? "border-red-500/50 bg-red-500/10" : "border-gray-500/50 bg-gray-500/10"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Badge variant={ban.is_active ? "destructive" : "secondary"}>
-                                  {ban.is_active ? "Aktiv" : "Abgelaufen"}
-                                </Badge>
-                                <Badge variant="outline" className="border-white/20 text-white">
-                                  {ban.ban_type === "permanent" ? "Permanent" : "Temporär"}
-                                </Badge>
-                              </div>
-                              <p className="text-white font-medium">Grund: {ban.reason}</p>
-                              <p className="text-gray-400 text-sm">Gebannt von: {ban.banned_by}</p>
-                              <p className="text-gray-400 text-sm">Gebannt am: {formatDate(ban.banned_at)}</p>
-                              {ban.expires_at && (
-                                <p className="text-gray-400 text-sm">Läuft ab: {formatDate(ban.expires_at)}</p>
-                              )}
-                            </div>
-                            <Clock className="h-5 w-5 text-gray-400" />
-                          </div>
-                        </div>
-                      ))}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/10">
+                    <div>
+                      <p className="text-white">Account verifiziert</p>
+                      <p className="text-sm text-gray-400">Zeigt an, ob dein Account verifiziert ist</p>
                     </div>
-                  )}
+                    <Switch
+                      checked={currentPlayer.verified}
+                      onCheckedChange={(checked) => updateSetting("verified", checked)}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

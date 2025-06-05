@@ -20,8 +20,12 @@ export async function GET(request: Request, { params }: { params: { username: st
         .insert([
           {
             username,
-            uuid: `offline-${username}-${Date.now()}`,
-            created_at: new Date().toISOString(),
+            joined_at: new Date().toISOString(),
+            last_seen: new Date().toISOString(),
+            playtime_minutes: 0,
+            pvp_enabled: true,
+            verified: false,
+            deaths: 0,
             kills: 0,
             bounty: 0,
           },
@@ -29,58 +33,21 @@ export async function GET(request: Request, { params }: { params: { username: st
         .select()
         .single()
 
-      if (createError) {
-        console.error("Fehler beim Erstellen des Spielers:", createError)
-        throw createError
-      }
+      if (createError) throw createError
       player = newPlayer
     } else if (playerError) {
-      console.error("Fehler beim Abrufen des Spielers:", playerError)
       throw playerError
-    }
-
-    // Einstellungen abrufen
-    const { data: settingsData, error: settingsError } = await supabase
-      .from("player_settings")
-      .select("setting_name, setting_value")
-      .eq("player_id", player.id)
-
-    if (settingsError) {
-      console.error("Fehler beim Abrufen der Einstellungen:", settingsError)
-      // Nicht kritisch, weiter machen
-    }
-
-    // Einstellungen in ein Objekt umwandeln
-    const settings: Record<string, boolean> = {}
-    settingsData?.forEach((setting) => {
-      settings[setting.setting_name] = setting.setting_value
-    })
-
-    // Bans abrufen
-    const { data: bansData, error: bansError } = await supabase
-      .from("bans")
-      .select("*")
-      .eq("player_id", player.id)
-      .order("banned_at", { ascending: false })
-
-    if (bansError) {
-      console.error("Fehler beim Abrufen der Bans:", bansError)
-      // Nicht kritisch, weiter machen
     }
 
     return NextResponse.json({
       player,
-      settings,
-      bans: bansData || [],
+      settings: {
+        pvp_enabled: player.pvp_enabled || false,
+        verified: player.verified || false,
+      },
     })
   } catch (error) {
     console.error("Fehler beim Abrufen der Spielerdaten:", error)
-    return NextResponse.json(
-      {
-        error: "Fehler beim Abrufen der Spielerdaten",
-        details: error instanceof Error ? error.message : "Unbekannter Fehler",
-      },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Fehler beim Abrufen der Spielerdaten" }, { status: 500 })
   }
 }

@@ -10,7 +10,7 @@ export async function POST(request: Request, { params }: { params: { username: s
     // Spieler abrufen
     const { data: player, error: playerError } = await supabase
       .from("players")
-      .select("id")
+      .select("uuid")
       .eq("username", username)
       .single()
 
@@ -19,19 +19,17 @@ export async function POST(request: Request, { params }: { params: { username: s
     }
 
     // Einstellungen aktualisieren
-    for (const [settingName, settingValue] of Object.entries(settings)) {
-      await supabase.from("player_settings").upsert(
-        {
-          player_id: player.id,
-          setting_name: settingName,
-          setting_value: settingValue,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "player_id,setting_name",
-        },
-      )
+    const updateData: any = {}
+    if (settings.pvp_enabled !== undefined) {
+      updateData.pvp_enabled = settings.pvp_enabled
     }
+    if (settings.verified !== undefined) {
+      updateData.verified = settings.verified
+    }
+
+    const { error: updateError } = await supabase.from("players").update(updateData).eq("uuid", player.uuid)
+
+    if (updateError) throw updateError
 
     return NextResponse.json({ success: true })
   } catch (error) {

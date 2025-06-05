@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 export async function GET() {
   try {
-    const supabase = createServerSupabaseClient()
-
     // Top Kills abrufen
     const { data: killsData, error: killsError } = await supabase
       .from("players")
@@ -12,9 +12,7 @@ export async function GET() {
       .order("kills", { ascending: false })
       .limit(10)
 
-    if (killsError) {
-      console.error("Fehler beim Abrufen der Kills:", killsError)
-    }
+    if (killsError) throw killsError
 
     // Top Bounty abrufen
     const { data: bountyData, error: bountyError } = await supabase
@@ -23,9 +21,7 @@ export async function GET() {
       .order("bounty", { ascending: false })
       .limit(10)
 
-    if (bountyError) {
-      console.error("Fehler beim Abrufen der Bounty:", bountyError)
-    }
+    if (bountyError) throw bountyError
 
     return NextResponse.json({
       kills: killsData || [],
@@ -33,12 +29,6 @@ export async function GET() {
     })
   } catch (error) {
     console.error("Fehler beim Abrufen der Leaderboards:", error)
-    return NextResponse.json(
-      {
-        kills: [],
-        bounty: [],
-      },
-      { status: 200 },
-    )
+    return NextResponse.json({ error: "Fehler beim Abrufen der Leaderboards" }, { status: 500 })
   }
 }
