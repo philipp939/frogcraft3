@@ -9,13 +9,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.logging.Level;
 
 public class ActionRequestManager {
@@ -39,8 +40,8 @@ public class ActionRequestManager {
             public void run() {
                 try {
                     // API-Anfrage senden
-                    URL url = new URL(apiUrl + "/action-requests?key=" + apiKey + "&uuid=" + player.getUniqueId().toString() + "&status=pending");
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    URI uri = new URI(apiUrl + "/action-requests?key=" + apiKey + "&uuid=" + player.getUniqueId().toString() + "&status=pending");
+                    HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
                     conn.setRequestMethod("GET");
                     conn.setRequestProperty("Accept", "application/json");
                     
@@ -51,13 +52,13 @@ public class ActionRequestManager {
                         return;
                     }
                     
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            response.append(line);
+                        }
                     }
-                    reader.close();
                     
                     // JSON parsen
                     JsonObject jsonObject = JsonParser.parseString(response.toString()).getAsJsonObject();
@@ -77,7 +78,7 @@ public class ActionRequestManager {
                     // Auf dem Hauptthread zurückgeben
                     Bukkit.getScheduler().runTask(plugin, () -> callback.onSuccess(requests));
                     
-                } catch (Exception e) {
+                } catch (IOException | URISyntaxException e) {
                     plugin.getLogger().log(Level.WARNING, "Fehler beim Laden der Aktionsanfragen", e);
                     Bukkit.getScheduler().runTask(plugin, () -> callback.onFailure(e.getMessage()));
                 }
@@ -100,8 +101,8 @@ public class ActionRequestManager {
                     requestBody.addProperty("responseMessage", responseMessage);
                     
                     // API-Anfrage senden
-                    URL url = new URL(apiUrl + "/action-requests?key=" + apiKey);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    URI uri = new URI(apiUrl + "/action-requests?key=" + apiKey);
+                    HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json");
                     conn.setRequestProperty("Accept", "application/json");
@@ -123,7 +124,7 @@ public class ActionRequestManager {
                     // Auf dem Hauptthread zurückgeben
                     Bukkit.getScheduler().runTask(plugin, () -> callback.onSuccess());
                     
-                } catch (Exception e) {
+                } catch (IOException | URISyntaxException e) {
                     plugin.getLogger().log(Level.WARNING, "Fehler beim Aktualisieren der Aktionsanfrage", e);
                     Bukkit.getScheduler().runTask(plugin, () -> callback.onFailure(e.getMessage()));
                 }
