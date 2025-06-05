@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createServerSupabaseClient } from "../../../../lib/supabase"
 
+// GET: Ausstehende Aktionsanfragen für einen Spieler abrufen
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
@@ -8,6 +9,7 @@ export async function GET(request: Request) {
     const uuid = url.searchParams.get("uuid")
     const status = url.searchParams.get("status") || "pending"
 
+    // API-Key prüfen
     if (apiKey !== process.env.API_SECRET_KEY) {
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
     }
@@ -18,6 +20,7 @@ export async function GET(request: Request) {
 
     const supabase = createServerSupabaseClient()
 
+    // Aktionsanfragen abrufen
     const { data: actionRequests, error } = await supabase
       .from("action_requests")
       .select("*")
@@ -25,23 +28,24 @@ export async function GET(request: Request) {
       .eq("status", status)
       .order("created_at", { ascending: false })
 
-    if (error) {
-      console.error("Fehler beim Abrufen der Aktionsanfragen (MC):", JSON.stringify(error, null, 2))
-      throw error
-    }
+    if (error) throw error
 
-    return NextResponse.json({ actionRequests })
+    return NextResponse.json({
+      actionRequests,
+    })
   } catch (error) {
-    console.error("Fehler in Minecraft GET:", JSON.stringify(error, null, 2))
+    console.error("Fehler beim Abrufen der Aktionsanfragen:", error)
     return NextResponse.json({ error: "Ein Fehler ist aufgetreten" }, { status: 500 })
   }
 }
 
+// POST: Status einer Aktionsanfrage aktualisieren
 export async function POST(request: Request) {
   try {
     const url = new URL(request.url)
     const apiKey = url.searchParams.get("key")
 
+    // API-Key prüfen
     if (apiKey !== process.env.API_SECRET_KEY) {
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
     }
@@ -55,6 +59,7 @@ export async function POST(request: Request) {
 
     const supabase = createServerSupabaseClient()
 
+    // Aktionsanfrage aktualisieren
     const { error } = await supabase
       .from("action_requests")
       .update({
@@ -64,14 +69,13 @@ export async function POST(request: Request) {
       })
       .eq("id", requestId)
 
-    if (error) {
-      console.error("Fehler beim Aktualisieren der Aktionsanfrage:", JSON.stringify(error, null, 2))
-      throw error
-    }
+    if (error) throw error
 
-    return NextResponse.json({ message: "Aktionsanfrage erfolgreich aktualisiert" })
+    return NextResponse.json({
+      message: "Aktionsanfrage erfolgreich aktualisiert",
+    })
   } catch (error) {
-    console.error("Fehler in Minecraft POST:", JSON.stringify(error, null, 2))
+    console.error("Fehler beim Aktualisieren der Aktionsanfrage:", error)
     return NextResponse.json({ error: "Ein Fehler ist aufgetreten" }, { status: 500 })
   }
 }
