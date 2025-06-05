@@ -1,29 +1,45 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+import { createServerSupabaseClient } from "@/lib/supabase"
 
 export async function GET() {
   try {
-    const { data: players, error } = await supabase
-      .from("players")
-      .select("id, username, uuid, created_at, last_login, is_online, kills, bounty")
-      .order("created_at", { ascending: false })
+    const supabase = createServerSupabaseClient()
 
-    if (error) {
-      console.error("Fehler beim Abrufen der Spieler:", error)
-      throw error
-    }
+    const { data: players, error } = await supabase.from("players").select("*").order("username")
 
-    return NextResponse.json({ players: players || [] })
+    if (error) throw error
+
+    return NextResponse.json({ players })
   } catch (error) {
     console.error("Fehler beim Abrufen der Spieler:", error)
-    return NextResponse.json(
-      {
-        error: "Fehler beim Abrufen der Spieler",
-        details: error instanceof Error ? error.message : "Unbekannter Fehler",
-      },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Fehler beim Abrufen der Spieler" }, { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const { username, kills, bounty } = await request.json()
+    const supabase = createServerSupabaseClient()
+
+    // Spieler aktualisieren
+    const { data: player, error } = await supabase
+      .from("players")
+      .upsert([
+        {
+          username: username.toLowerCase(),
+          kills: kills || 0,
+          bounty: bounty || 0,
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json({ player })
+  } catch (error) {
+    console.error("Fehler beim Aktualisieren des Spielers:", error)
+    return NextResponse.json({ error: "Fehler beim Aktualisieren des Spielers" }, { status: 500 })
   }
 }

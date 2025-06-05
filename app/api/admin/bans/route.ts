@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+import { createServerSupabaseClient } from "@/lib/supabase"
 
 export async function GET() {
   try {
+    const supabase = createServerSupabaseClient()
+
     const { data: bans, error } = await supabase
       .from("bans")
       .select(`
@@ -25,6 +25,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { username, reason, banType, duration, bannedBy } = await request.json()
+    const supabase = createServerSupabaseClient()
 
     // Spieler finden
     const { data: player, error: playerError } = await supabase

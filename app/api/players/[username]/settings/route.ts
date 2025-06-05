@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+import { createServerSupabaseClient } from "@/lib/supabase"
 
 export async function POST(request: Request, { params }: { params: { username: string } }) {
   try {
     const username = params.username.toLowerCase()
     const settings = await request.json()
+    const supabase = createServerSupabaseClient()
 
     // Spieler abrufen
     const { data: player, error: playerError } = await supabase

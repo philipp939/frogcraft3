@@ -3,46 +3,81 @@ import { createServerSupabaseClient } from "@/lib/supabase"
 
 export async function GET(request: Request, { params }: { params: { username: string } }) {
   try {
-    console.log("API aufgerufen für Spieler:", params.username)
-
+    const username = params.username.toLowerCase()
     const supabase = createServerSupabaseClient()
 
-    // Spieler in der Datenbank suchen
-    const { data: player, error } = await supabase
+    // Spieler abrufen oder erstellen
+    let { data: player, error: playerError } = await supabase
       .from("players")
       .select("*")
-      .eq("username", params.username.toLowerCase())
+      .eq("username", username)
       .single()
 
-    console.log("Supabase Antwort:", { player, error })
+    if (playerError && playerError.code === "PGRST116") {
+      // Spieler existiert nicht, erstellen
+      const { data: newPlayer, error: createError } = await supabase
+        .from("players")
+        .insert([
+          {
+            username,
+            uuid: `offline-${username}-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            kills: 0,
+            bounty: 0,
+          },
+        ])
+        .select()
+        .single()
 
-    if (error) {
-      console.error("Supabase Fehler:", error)
-      if (error.code === "PGRST116") {
-        return NextResponse.json({ error: "Spieler nicht gefunden" }, { status: 404 })
+      if (createError) {
+        console.error("Fehler beim Erstellen des Spielers:", createError)
+        throw createError
       }
-      throw error
+      player = newPlayer
+    } else if (playerError) {
+      console.error("Fehler beim Abrufen des Spielers:", playerError)
+      throw playerError
     }
 
-    if (!player) {
-      return NextResponse.json({ error: "Spieler nicht gefunden" }, { status: 404 })
+    // Einstellungen abrufen
+    const { data: settingsData, error: settingsError } = await supabase
+      .from("player_settings")
+      .select("setting_name, setting_value")
+      .eq("player_id", player.id)
+
+    if (settingsError) {
+      console.error("Fehler beim Abrufen der Einstellungen:", settingsError)
+      // Nicht kritisch, weiter machen
+    }
+
+    // Einstellungen in ein Objekt umwandeln
+    const settings: Record<string, boolean> = {}
+    settingsData?.forEach((setting) => {
+      settings[setting.setting_name] = setting.setting_value
+    })
+
+    // Bans abrufen
+    const { data: bansData, error: bansError } = await supabase
+      .from("bans")
+      .select("*")
+      .eq("player_id", player.id)
+      .order("banned_at", { ascending: false })
+
+    if (bansError) {
+      console.error("Fehler beim Abrufen der Bans:", bansError)
+      // Nicht kritisch, weiter machen
     }
 
     return NextResponse.json({
-      player: {
-        username: player.username,
-        uuid: player.uuid,
-        kills: player.kills || 0,
-        bounty: player.bounty || 0,
-        last_seen: player.last_seen,
-        created_at: player.created_at,
-      },
+      player,
+      settings,
+      bans: bansData || [],
     })
   } catch (error) {
     console.error("Fehler beim Abrufen der Spielerdaten:", error)
     return NextResponse.json(
       {
-        error: "Ein Fehler ist aufgetreten beim Laden der Spielerdaten",
+        error: "Fehler beim Abrufen der Spielerdaten",
         details: error instanceof Error ? error.message : "Unbekannter Fehler",
       },
       { status: 500 },

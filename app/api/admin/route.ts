@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@supabase/supabase-js"
+import { createServerSupabaseClient } from "../../../lib/supabase"
 
 // Hilfsfunktion zur Überprüfung der Moderator-Berechtigung
 async function isModeratorOrAdmin(supabase: any, userId: string) {
@@ -16,6 +16,22 @@ async function isModeratorOrAdmin(supabase: any, userId: string) {
 export async function GET(request: Request) {
   try {
     const supabase = createServerSupabaseClient()
+
+    // Authentifizierung prüfen
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
+    }
+
+    // Moderator-Berechtigung prüfen
+    const isModerator = await isModeratorOrAdmin(supabase, session.user.id)
+
+    if (!isModerator) {
+      return NextResponse.json({ error: "Keine Berechtigung" }, { status: 403 })
+    }
 
     // Alle Spieler abrufen
     const { data: players, error: playersError } = await supabase.from("players").select("*").order("username")
@@ -66,14 +82,25 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { action, password, data } = body
-
-    // Passwort prüfen
-    if (password !== "kahba") {
-      return NextResponse.json({ error: "Falsches Passwort" }, { status: 401 })
-    }
+    const { action, data } = body
 
     const supabase = createServerSupabaseClient()
+
+    // Authentifizierung prüfen
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
+    }
+
+    // Moderator-Berechtigung prüfen
+    const isModerator = await isModeratorOrAdmin(supabase, session.user.id)
+
+    if (!isModerator) {
+      return NextResponse.json({ error: "Keine Berechtigung" }, { status: 403 })
+    }
 
     // Verschiedene Admin-Aktionen
     switch (action) {

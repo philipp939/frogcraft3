@@ -5,37 +5,40 @@ export async function GET() {
   try {
     const supabase = createServerSupabaseClient()
 
-    // Top 5 Kills abrufen
-    const { data: killsLeaderboard, error: killsError } = await supabase
+    // Top Kills abrufen
+    const { data: killsData, error: killsError } = await supabase
       .from("players")
       .select("username, kills")
       .order("kills", { ascending: false })
-      .limit(5)
+      .limit(10)
 
-    if (killsError) throw killsError
+    if (killsError) {
+      console.error("Fehler beim Abrufen der Kills:", killsError)
+    }
 
-    // Top 5 Bounty abrufen
-    const { data: bountyLeaderboard, error: bountyError } = await supabase
+    // Top Bounty abrufen
+    const { data: bountyData, error: bountyError } = await supabase
       .from("players")
       .select("username, bounty")
       .order("bounty", { ascending: false })
-      .limit(5)
+      .limit(10)
 
-    if (bountyError) throw bountyError
+    if (bountyError) {
+      console.error("Fehler beim Abrufen der Bounty:", bountyError)
+    }
 
     return NextResponse.json({
-      kills: killsLeaderboard || [],
-      bounty: bountyLeaderboard || [],
+      kills: killsData || [],
+      bounty: bountyData || [],
     })
   } catch (error) {
     console.error("Fehler beim Abrufen der Leaderboards:", error)
     return NextResponse.json(
       {
-        error: "Fehler beim Laden der Leaderboards",
         kills: [],
         bounty: [],
       },
-      { status: 500 },
+      { status: 200 },
     )
   }
 }

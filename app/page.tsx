@@ -1,13 +1,10 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Gamepad2, Trophy, Coins, Search } from "lucide-react"
+import { Users, Shield, Settings, BarChart3, Gamepad2, Crown, Trophy, Coins } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface LeaderboardPlayer {
   username: string
@@ -15,29 +12,45 @@ interface LeaderboardPlayer {
   bounty?: number
 }
 
-interface PlayerData {
-  username: string
-  uuid: string
-  kills: number
-  bounty: number
-  last_seen: string
-  created_at: string
-}
-
 export default function HomePage() {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  })
   const [killsLeaderboard, setKillsLeaderboard] = useState<LeaderboardPlayer[]>([])
   const [bountyLeaderboard, setBountyLeaderboard] = useState<LeaderboardPlayer[]>([])
-  const [searchUsername, setSearchUsername] = useState("")
-  const [playerData, setPlayerData] = useState<PlayerData | null>(null)
-  const [searchError, setSearchError] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
-  const [error, setError] = useState(false) // Declare the error variable
 
-  // Leaderboards laden (nur Top 5)
+  // Countdown bis 22.07.2025 20:00
+  useEffect(() => {
+    const targetDate = new Date("2025-07-22T20:00:00").getTime()
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime()
+      const difference = targetDate - now
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        })
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+        clearInterval(interval)
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Leaderboards laden
   useEffect(() => {
     const loadLeaderboards = async () => {
       try {
-        const response = await fetch("/api/leaderboard?page=1&limit=5")
+        const response = await fetch("/api/leaderboard")
         if (response.ok) {
           const data = await response.json()
           setKillsLeaderboard(data.kills || [])
@@ -51,49 +64,6 @@ export default function HomePage() {
     loadLeaderboards()
   }, [])
 
-  // Spielersuche
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!searchUsername.trim()) {
-      setSearchError("Bitte gib deinen Minecraft-Namen ein.")
-      setError(true) // Set error to true
-      return
-    }
-
-    setIsSearching(true)
-    setSearchError("")
-    setPlayerData(null)
-    setError(false) // Set error to false
-
-    try {
-      const response = await fetch(`/api/players/${encodeURIComponent(searchUsername.trim())}`)
-      const data = await response.json()
-
-      if (response.ok) {
-        setPlayerData(data.player)
-      } else {
-        setSearchError(data.error || "Spieler nicht gefunden")
-        setError(true) // Set error to true
-      }
-    } catch (error) {
-      console.error("Fehler bei der Spielersuche:", error)
-      setSearchError("Ein Fehler ist aufgetreten")
-      setError(true) // Set error to true
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
-  const handleAdminClick = () => {
-    const password = prompt("Admin-Passwort eingeben:")
-    if (password === "kahba") {
-      window.location.href = "/admin"
-    } else if (password) {
-      alert("Falsches Passwort!")
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
@@ -105,15 +75,23 @@ export default function HomePage() {
               <h1 className="text-2xl font-bold text-white">FrogCraft</h1>
             </div>
             <nav className="flex items-center space-x-4">
-              <button onClick={handleAdminClick} className="text-white hover:text-purple-300 transition-colors">
-                Admin
-              </button>
+              <Link href="/dashboard">
+                <Button variant="ghost" className="text-white hover:text-purple-300">
+                  Dashboard
+                </Button>
+              </Link>
+              <Link href="/admin">
+                <Button variant="ghost" className="text-white hover:text-purple-300">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Admin
+                </Button>
+              </Link>
             </nav>
           </div>
         </div>
       </header>
 
-      {/* Hero Section mit Spielersuche */}
+      {/* Hero Section mit Countdown */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <h2 className="text-5xl font-bold text-white mb-6">
@@ -123,65 +101,63 @@ export default function HomePage() {
             Dein ultimatives Minecraft-Erlebnis mit erweiterten Features, Spielerverwaltung und Community-Tools.
           </p>
 
-          {/* Spielersuche */}
-          <div className="w-full max-w-md mx-auto mb-8">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
-                  Minecraft-Benutzername
-                </label>
-                <Input
-                  type="text"
-                  id="username"
-                  value={searchUsername}
-                  onChange={(e) => setSearchUsername(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Dein Minecraft-Name"
-                  disabled={isSearching}
-                />
+          {/* Countdown */}
+          <div className="countdown-container p-8 mb-8 max-w-2xl mx-auto">
+            <h3 className="text-2xl font-bold text-white mb-4">Server Start Countdown</h3>
+            <div className="flex justify-center space-x-4">
+              <div className="text-center">
+                <div className="countdown-digit">{timeLeft.days.toString().padStart(2, "0")}</div>
+                <div className="text-sm text-gray-300 mt-2">Tage</div>
               </div>
+              <div className="countdown-separator flex items-center">:</div>
+              <div className="text-center">
+                <div className="countdown-digit">{timeLeft.hours.toString().padStart(2, "0")}</div>
+                <div className="text-sm text-gray-300 mt-2">Stunden</div>
+              </div>
+              <div className="countdown-separator flex items-center">:</div>
+              <div className="text-center">
+                <div className="countdown-digit">{timeLeft.minutes.toString().padStart(2, "0")}</div>
+                <div className="text-sm text-gray-300 mt-2">Minuten</div>
+              </div>
+              <div className="countdown-separator flex items-center">:</div>
+              <div className="text-center">
+                <div className="countdown-digit">{timeLeft.seconds.toString().padStart(2, "0")}</div>
+                <div className="text-sm text-gray-300 mt-2">Sekunden</div>
+              </div>
+            </div>
+          </div>
 
-              <Button
-                type="submit"
-                disabled={isSearching}
-                className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Search className="h-4 w-4 mr-2" />
-                {isSearching ? "Wird geladen..." : "Spieler suchen"}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/dashboard">
+              <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Users className="h-5 w-5 mr-2" />
+                Spieler Dashboard
               </Button>
-
-              {error && (
-                <div className="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg">
-                  <p className="text-red-300 text-sm">{searchError}</p>
-                </div>
-              )}
-
-              {playerData && (
-                <div className="mt-4 p-4 bg-purple-900/30 border border-purple-800 rounded-lg">
-                  <h4 className="text-lg font-bold text-white mb-2">{playerData.username}</h4>
-                  <div className="space-y-1 text-purple-200">
-                    <p>Kills: {playerData.kills}</p>
-                    <p>Bounty: {playerData.bounty}</p>
-                    <p>Zuletzt gesehen: {new Date(playerData.last_seen).toLocaleDateString("de-DE")}</p>
-                  </div>
-                </div>
-              )}
-            </form>
+            </Link>
+            <Link href="/admin">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white"
+              >
+                <Shield className="h-5 w-5 mr-2" />
+                Admin Panel
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Leaderboards - nur Top 5 */}
+      {/* Leaderboards */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
-          <h3 className="text-3xl font-bold text-white text-center mb-12">Top 5 Leaderboards</h3>
-
+          <h3 className="text-3xl font-bold text-white text-center mb-12">Leaderboards</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {/* Kills Leaderboard */}
             <div className="leaderboard-card p-6">
               <div className="flex items-center mb-6">
                 <Trophy className="h-6 w-6 text-red-400 mr-2" />
-                <h4 className="text-xl font-bold text-white">Top 5 Kills</h4>
+                <h4 className="text-xl font-bold text-white">Top Kills</h4>
               </div>
               <div className="space-y-3">
                 {killsLeaderboard.length > 0 ? (
@@ -218,7 +194,7 @@ export default function HomePage() {
             <div className="leaderboard-card p-6">
               <div className="flex items-center mb-6">
                 <Coins className="h-6 w-6 text-yellow-400 mr-2" />
-                <h4 className="text-xl font-bold text-white">Top 5 Bounty</h4>
+                <h4 className="text-xl font-bold text-white">Top Bounty</h4>
               </div>
               <div className="space-y-3">
                 {bountyLeaderboard.length > 0 ? (
@@ -254,6 +230,72 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Features Grid */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
+          <h3 className="text-3xl font-bold text-white text-center mb-12">Server Features</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Settings className="h-5 w-5 mr-2 text-purple-400" />
+                  Spieler-Einstellungen
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Verwalte deine persönlichen Spieleinstellungen
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-gray-300">
+                <ul className="space-y-2">
+                  <li>• PVP Ein-/Ausschalten</li>
+                  <li>• Teleport-Schutz</li>
+                  <li>• Chat-Einstellungen</li>
+                  <li>• Freundschaftssystem</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Shield className="h-5 w-5 mr-2 text-red-400" />
+                  Ban-Management
+                </CardTitle>
+                <CardDescription className="text-gray-400">Erweiterte Moderation und Ban-System</CardDescription>
+              </CardHeader>
+              <CardContent className="text-gray-300">
+                <ul className="space-y-2">
+                  <li>• Temporäre Bans</li>
+                  <li>• Permanente Bans</li>
+                  <li>• Ban-Historie</li>
+                  <li>• Automatische Entbannungen</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <BarChart3 className="h-5 w-5 mr-2 text-green-400" />
+                  Statistiken
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Detaillierte Spieler- und Server-Statistiken
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-gray-300">
+                <ul className="space-y-2">
+                  <li>• Spielzeit-Tracking</li>
+                  <li>• Kill/Death Ratio</li>
+                  <li>• Block-Statistiken</li>
+                  <li>• Server-Aktivität</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Server Info */}
       <section className="py-16 px-4 bg-black/20">
         <div className="container mx-auto text-center">
@@ -265,7 +307,7 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <code className="text-purple-400 text-lg font-mono">frog-craft.de</code>
-                <p className="text-gray-400 mt-2">Minecraft Version 1.21.4</p>
+                <p className="text-gray-400 mt-2">Minecraft Version 1.19+</p>
               </CardContent>
             </Card>
 
