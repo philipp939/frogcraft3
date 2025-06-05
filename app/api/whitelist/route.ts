@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import fs from "fs"
 import path from "path"
 import { exec } from "child_process"
 import { promisify } from "util"
@@ -35,56 +34,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Minecraft-Benutzername und Discord-Tag sind erforderlich" }, { status: 400 })
     }
 
-    // Überprüfe, ob die whitelist.json existiert
-    if (!fs.existsSync(WHITELIST_PATH)) {
-      return NextResponse.json({ error: "Whitelist-Datei nicht gefunden" }, { status: 500 })
-    }
-
-    // Lese die aktuelle Whitelist
-    const whitelistContent = fs.readFileSync(WHITELIST_PATH, "utf-8")
-    const whitelist = JSON.parse(whitelistContent)
-
-    // Überprüfe, ob der Spieler bereits auf der Whitelist steht
-    if (whitelist.some((player: any) => player.name.toLowerCase() === username.toLowerCase())) {
-      return NextResponse.json({ error: "Spieler ist bereits auf der Whitelist" }, { status: 400 })
-    }
-
-    // Speichere die Anfrage in einer separaten Datei zur Überprüfung
-    const requestsPath = path.join(MINECRAFT_SERVER_PATH, "whitelist_requests.json")
-    let requests = []
-
-    if (fs.existsSync(requestsPath)) {
-      const requestsContent = fs.readFileSync(requestsPath, "utf-8")
-      requests = JSON.parse(requestsContent)
-    }
-
-    requests.push({
-      username,
-      discordTag,
-      timestamp: new Date().toISOString(),
-      status: "pending",
-    })
-
-    fs.writeFileSync(requestsPath, JSON.stringify(requests, null, 2))
-
-    // Optional: Füge den Spieler direkt zur Whitelist hinzu
-    // Hinweis: Dies sollte nur aktiviert werden, wenn du eine zusätzliche Sicherheitsebene hast
-    /*
-    whitelist.push({
-      uuid: "", // UUID wird vom Server beim Neuladen der Whitelist automatisch hinzugefügt
-      name: username
-    })
-    
-    fs.writeFileSync(WHITELIST_PATH, JSON.stringify(whitelist, null, 2))
-    
-    // Führe den Befehl aus, um die Whitelist neu zu laden
-    try {
-      await execAsync(`screen -S ${SCREEN_SESSION_NAME} -p 0 -X stuff 'whitelist reload\n'`)
-    } catch (error) {
-      console.error("Fehler beim Ausführen des Whitelist-Reload-Befehls:", error)
-      // Wir geben trotzdem eine Erfolgsantwort zurück, da der Spieler zur Whitelist hinzugefügt wurde
-    }
-    */
+    // Einfache Bestätigung - in der Realität würdest du das in einer Datenbank speichern
+    console.log(`Whitelist-Anfrage: ${username} (${discordTag})`)
 
     return NextResponse.json({
       message: "Deine Anfrage wurde erfolgreich eingereicht und wird überprüft.",

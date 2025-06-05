@@ -5,6 +5,8 @@ import Link from "next/link"
 import { Users, Shield, Gamepad2, Crown, Trophy, Coins } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import ProfessionalBackground from "./components/ProfessionalBackground"
+import Footer from "./components/Footer"
 
 interface LeaderboardPlayer {
   username: string
@@ -36,6 +38,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <ProfessionalBackground />
+
       {/* Header */}
       <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
@@ -219,11 +223,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-white/10">
-        <div className="container mx-auto text-center text-gray-400">
-          <p>&copy; 2025 FrogCraft. Alle Rechte vorbehalten.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
