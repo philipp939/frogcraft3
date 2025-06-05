@@ -12,31 +12,31 @@ export async function GET(request: Request) {
 
     const supabase = createServerSupabaseClient()
 
-    // Spieler abrufen
     const { data: player, error: playerError } = await supabase
       .from("players")
       .select("uuid")
       .eq("username", username.toLowerCase())
-      .single()
+      .maybeSingle()
 
     if (playerError) {
+      console.error("Fehler Spieler-Abfrage:", JSON.stringify(playerError, null, 2))
       return NextResponse.json({ error: "Spieler nicht gefunden" }, { status: 404 })
     }
 
-    // Aktionsanfragen abrufen
     const { data: actionRequests, error: actionError } = await supabase
       .from("action_requests")
       .select("*")
-      .eq("uuid", player.uuid)
+      .eq("uuid", player?.uuid)
       .order("created_at", { ascending: false })
 
-    if (actionError) throw actionError
+    if (actionError) {
+      console.error("Fehler Aktionsanfrage-Abfrage:", JSON.stringify(actionError, null, 2))
+      throw actionError
+    }
 
-    return NextResponse.json({
-      actionRequests,
-    })
+    return NextResponse.json({ actionRequests })
   } catch (error) {
-    console.error("Fehler beim Abrufen der Aktionsanfragen:", error)
+    console.error("Fehler beim Abrufen der Aktionsanfragen:", JSON.stringify(error, null, 2))
     return NextResponse.json({ error: "Ein Fehler ist aufgetreten" }, { status: 500 })
   }
 }
