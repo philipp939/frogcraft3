@@ -6,12 +6,8 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, Shield, Plus, Trash2, Crown, Gamepad2, Calendar, Lock } from "lucide-react"
+import { Crown, Gamepad2, Lock, Construction } from "lucide-react"
 import Link from "next/link"
 
 interface Player {
@@ -221,277 +217,25 @@ export default function AdminPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Message */}
-        {message && (
-          <Card
-            className={`mb-8 ${message.type === "success" ? "border-green-500/50 bg-green-500/10" : "border-red-500/50 bg-red-500/10"}`}
-          >
-            <CardContent className="pt-6">
-              <p className={message.type === "success" ? "text-green-400" : "text-red-400"}>{message.text}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Gesamt Spieler</CardTitle>
-              <Users className="h-4 w-4 text-purple-400" />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md bg-black/40 border-white/10 backdrop-blur-sm">
+            <CardHeader className="text-center">
+              <CardTitle className="text-white flex items-center justify-center">
+                <Construction className="h-6 w-6 mr-2" />
+                In Entwicklung
+              </CardTitle>
+              <CardDescription className="text-gray-400">Das Admin-Panel wird derzeit entwickelt</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{players.length}</div>
-              <p className="text-xs text-gray-400">{players.filter((p) => p.pvp_enabled).length} mit PVP</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Aktive Bans</CardTitle>
-              <Shield className="h-4 w-4 text-red-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{bans.filter((b) => b.is_active).length}</div>
-              <p className="text-xs text-gray-400">{bans.length} gesamt</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Heute registriert</CardTitle>
-              <Calendar className="h-4 w-4 text-green-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">
-                {
-                  players.filter((p) => {
-                    const today = new Date().toDateString()
-                    const playerDate = new Date(p.joined_at).toDateString()
-                    return today === playerDate
-                  }).length
-                }
-              </div>
-              <p className="text-xs text-gray-400">Neue Spieler</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Total Kills</CardTitle>
-              <Shield className="h-4 w-4 text-yellow-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">
-                {players.reduce((total, player) => total + (player.kills || 0), 0)}
-              </div>
-              <p className="text-xs text-gray-400">Server-weit</p>
+            <CardContent className="text-center">
+              <p className="text-gray-300 mb-6">
+                Die Admin-Funktionen sind noch nicht verfügbar. Diese werden in einer zukünftigen Version hinzugefügt.
+              </p>
+              <Link href="/">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700 rounded-lg">Zurück zur Startseite</Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
-
-        {/* Main Content */}
-        <Tabs defaultValue="players" className="space-y-6">
-          <TabsList className="bg-black/40 border-white/10 rounded-lg">
-            <TabsTrigger value="players" className="data-[state=active]:bg-purple-600 rounded-lg">
-              <Users className="h-4 w-4 mr-2" />
-              Spieler ({players.length})
-            </TabsTrigger>
-            <TabsTrigger value="bans" className="data-[state=active]:bg-purple-600 rounded-lg">
-              <Shield className="h-4 w-4 mr-2" />
-              Bans ({bans.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="players">
-            <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
-              <CardHeader>
-                <CardTitle className="text-white">Spieler-Verwaltung</CardTitle>
-                <CardDescription className="text-gray-400">Übersicht über alle registrierten Spieler</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {players.map((player) => (
-                    <div
-                      key={player.id}
-                      className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/10"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-white font-medium">{player.username}</p>
-                          <Badge variant={player.pvp_enabled ? "destructive" : "default"} className="rounded-full">
-                            {player.pvp_enabled ? "PVP" : "Friedlich"}
-                          </Badge>
-                          {player.verified && (
-                            <Badge variant="secondary" className="rounded-full">
-                              Verifiziert
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-gray-400 text-sm">Registriert: {formatDate(player.joined_at)}</p>
-                        <p className="text-gray-400 text-sm">
-                          Letzter Login: {player.last_seen ? formatDate(player.last_seen) : "Nie"}
-                        </p>
-                        <div className="flex gap-4 text-sm">
-                          <span className="text-red-400">Kills: {player.kills || 0}</span>
-                          <span className="text-yellow-400">Bounty: {player.bounty || 0}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Link href={`/dashboard?search=${player.username}`}>
-                          <Button variant="outline" size="sm" className="border-white/20 text-white rounded-lg">
-                            Details
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="bans">
-            <div className="space-y-6">
-              {/* Create Ban */}
-              <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Plus className="h-5 w-5 mr-2" />
-                    Neuen Ban erstellen
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <div>
-                      <Label htmlFor="username" className="text-gray-300">
-                        Benutzername
-                      </Label>
-                      <Input
-                        id="username"
-                        placeholder="Spielername"
-                        value={banForm.username}
-                        onChange={(e) => setBanForm((prev) => ({ ...prev, username: e.target.value }))}
-                        className="bg-black/20 border-white/20 text-white rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="banType" className="text-gray-300">
-                        Ban-Typ
-                      </Label>
-                      <Select
-                        value={banForm.banType}
-                        onValueChange={(value) => setBanForm((prev) => ({ ...prev, banType: value }))}
-                      >
-                        <SelectTrigger className="bg-black/20 border-white/20 text-white rounded-lg">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-black border-white/20 rounded-lg">
-                          <SelectItem value="temporary">Temporär</SelectItem>
-                          <SelectItem value="permanent">Permanent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="duration" className="text-gray-300">
-                        Dauer (Tage)
-                      </Label>
-                      <Input
-                        id="duration"
-                        type="number"
-                        placeholder="1"
-                        value={banForm.duration}
-                        onChange={(e) => setBanForm((prev) => ({ ...prev, duration: e.target.value }))}
-                        disabled={banForm.banType === "permanent"}
-                        className="bg-black/20 border-white/20 text-white rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="bannedBy" className="text-gray-300">
-                        Gebannt von
-                      </Label>
-                      <Input
-                        id="bannedBy"
-                        placeholder="Admin"
-                        value={banForm.bannedBy}
-                        onChange={(e) => setBanForm((prev) => ({ ...prev, bannedBy: e.target.value }))}
-                        className="bg-black/20 border-white/20 text-white rounded-lg"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button onClick={createBan} className="w-full bg-red-600 hover:bg-red-700 rounded-lg">
-                        Ban erstellen
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <Label htmlFor="reason" className="text-gray-300">
-                      Grund
-                    </Label>
-                    <Textarea
-                      id="reason"
-                      placeholder="Grund für den Ban..."
-                      value={banForm.reason}
-                      onChange={(e) => setBanForm((prev) => ({ ...prev, reason: e.target.value }))}
-                      className="bg-black/20 border-white/20 text-white rounded-lg"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Bans List */}
-              <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
-                <CardHeader>
-                  <CardTitle className="text-white">Ban-Liste</CardTitle>
-                  <CardDescription className="text-gray-400">Übersicht über alle Bans</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {bans.length === 0 ? (
-                      <p className="text-gray-400 text-center py-8">Keine Bans vorhanden</p>
-                    ) : (
-                      bans.map((ban) => (
-                        <div
-                          key={ban.id}
-                          className={`p-4 rounded-lg border ${
-                            ban.is_active ? "border-red-500/50 bg-red-500/10" : "border-gray-500/50 bg-gray-500/10"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <p className="text-white font-medium">{ban.player.username}</p>
-                                <Badge variant={ban.is_active ? "destructive" : "secondary"} className="rounded-full">
-                                  {ban.is_active ? "Aktiv" : "Abgelaufen"}
-                                </Badge>
-                                <Badge variant="outline" className="border-white/20 text-white rounded-full">
-                                  {ban.ban_type === "permanent" ? "Permanent" : "Temporär"}
-                                </Badge>
-                              </div>
-                              <p className="text-gray-300">Grund: {ban.reason}</p>
-                              <p className="text-gray-400 text-sm">Gebannt von: {ban.banned_by}</p>
-                              <p className="text-gray-400 text-sm">Gebannt am: {formatDate(ban.banned_at)}</p>
-                              {ban.expires_at && (
-                                <p className="text-gray-400 text-sm">Läuft ab: {formatDate(ban.expires_at)}</p>
-                              )}
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeBan(ban.id)}
-                              className="border-red-500/50 text-red-400 hover:bg-red-500/20 rounded-lg"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Users, Shield, Gamepad2, Crown, Trophy, Coins } from "lucide-react"
+import { Users, Gamepad2, Crown, Trophy, Coins } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -76,16 +76,6 @@ export default function HomePage() {
               <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white">
                 <Users className="h-5 w-5 mr-2" />
                 Spieler Dashboard
-              </Button>
-            </Link>
-            <Link href="/admin">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white"
-              >
-                <Shield className="h-5 w-5 mr-2" />
-                Admin Panel
               </Button>
             </Link>
           </div>
