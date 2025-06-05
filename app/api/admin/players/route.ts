@@ -4,7 +4,7 @@ import { query } from "@/lib/db"
 export async function GET() {
   try {
     const playersResult = await query(
-      `SELECT uuid, username, joined_at, last_seen, playtime_minutes, 
+      `SELECT id, username, joined_at, last_seen, playtime_minutes, 
       pvp_enabled, verified, deaths, kills, bounty 
       FROM players ORDER BY joined_at DESC`,
     )

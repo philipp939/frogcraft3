@@ -7,7 +7,7 @@ export async function POST(request: Request, { params }: { params: { username: s
     const settings = await request.json()
 
     // Spieler abrufen
-    const playerResult = await query("SELECT uuid FROM players WHERE username = $1", [username])
+    const playerResult = await query("SELECT id FROM players WHERE username = $1", [username])
 
     if (playerResult.rows.length === 0) {
       return NextResponse.json({ error: "Spieler nicht gefunden" }, { status: 404 })
