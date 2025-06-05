@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 
 import de.frogcraft.manager.ActionRequestManager.ActionRequest;
 import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.hover.content.Text;
@@ -15,9 +16,11 @@ import java.util.List;
 
 public class ActionRequestCommand implements CommandExecutor {
     
+    private final FrogCraftManager plugin;
     private final ActionRequestManager requestManager;
     
     public ActionRequestCommand(FrogCraftManager plugin, ActionRequestManager requestManager) {
+        this.plugin = plugin;
         this.requestManager = requestManager;
     }
     

@@ -9,18 +9,17 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -32,6 +31,7 @@ public class FrogCraftManager extends JavaPlugin implements Listener {
     private String apiUrl;
     private String apiKey;
     private int refreshInterval;
+    private final Gson gson = new Gson();
     
     // Cache für Spielereinstellungen
     private final Map<String, Map<String, Boolean>> playerSettings = new ConcurrentHashMap<>();
@@ -58,12 +58,8 @@ public class FrogCraftManager extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         
         // Befehle registrieren
-        if (getCommand("settings") != null) {
-            getCommand("settings").setExecutor(new SettingsCommand(this));
-        }
-        if (getCommand("requests") != null) {
-            getCommand("requests").setExecutor(new ActionRequestCommand(this, actionRequestManager));
-        }
+        getCommand("settings").setExecutor(new SettingsCommand(this));
+        getCommand("requests").setExecutor(new ActionRequestCommand(this, actionRequestManager));
         
         // Spielereinstellungen beim Start laden
         loadPlayerSettings();
@@ -103,8 +99,8 @@ public class FrogCraftManager extends JavaPlugin implements Listener {
             public void run() {
                 try {
                     // API-Anfrage senden
-                    URI uri = new URI(apiUrl + "?key=" + apiKey);
-                    HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
+                    URL url = new URL(apiUrl + "?key=" + apiKey);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
                     conn.setRequestProperty("Accept", "application/json");
                     
@@ -114,13 +110,13 @@ public class FrogCraftManager extends JavaPlugin implements Listener {
                         return;
                     }
                     
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder response = new StringBuilder();
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            response.append(line);
-                        }
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
                     }
+                    reader.close();
                     
                     // JSON parsen
                     JsonObject jsonObject = JsonParser.parseString(response.toString()).getAsJsonObject();
@@ -150,7 +146,7 @@ public class FrogCraftManager extends JavaPlugin implements Listener {
                         getLogger().info("Spielereinstellungen aktualisiert: " + playerSettings.size() + " Spieler");
                     });
                     
-                } catch (IOException | URISyntaxException e) {
+                } catch (Exception e) {
                     getLogger().log(Level.WARNING, "Fehler beim Laden der Spielereinstellungen", e);
                 }
             }
@@ -213,8 +209,8 @@ public class FrogCraftManager extends JavaPlugin implements Listener {
                     requestBody.add("playerStats", statsArray);
                     
                     // API-Anfrage senden
-                    URI uri = new URI(apiUrl + "?key=" + apiKey);
-                    HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
+                    URL url = new URL(apiUrl + "?key=" + apiKey);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json");
                     conn.setRequestProperty("Accept", "application/json");
@@ -234,7 +230,7 @@ public class FrogCraftManager extends JavaPlugin implements Listener {
                     
                     getLogger().info("Spielerstatistiken erfolgreich gesendet: " + playerStats.size() + " Spieler");
                     
-                } catch (IOException | URISyntaxException e) {
+                } catch (Exception e) {
                     getLogger().log(Level.WARNING, "Fehler beim Senden der Spielerstatistiken", e);
                 }
             }
@@ -260,7 +256,7 @@ public class FrogCraftManager extends JavaPlugin implements Listener {
         
         // Offline-Spieler suchen
         for (Map.Entry<String, Map<String, Boolean>> entry : playerSettings.entrySet()) {
-            Player offlinePlayer = Bukkit.getOfflinePlayer(uuid).getPlayer();
+            Player offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(uuid.toString())).getPlayer();
             if (offlinePlayer != null && offlinePlayer.getUniqueId().equals(uuid)) {
                 return entry.getKey();
             }
@@ -276,11 +272,21 @@ public class FrogCraftManager extends JavaPlugin implements Listener {
         PlayerStats stats = playerStats.computeIfAbsent(username.toLowerCase(), k -> new PlayerStats());
         
         switch (statType) {
-            case "death" -> stats.incrementDeaths();
-            case "kill" -> stats.incrementKills();
-            case "block_break" -> stats.incrementBlocksBroken(amount);
-            case "block_place" -> stats.incrementBlocksPlaced(amount);
-            case "playtime" -> stats.incrementPlaytimeMinutes(amount);
+            case "death":
+                stats.incrementDeaths();
+                break;
+            case "kill":
+                stats.incrementKills();
+                break;
+            case "block_break":
+                stats.incrementBlocksBroken(amount);
+                break;
+            case "block_place":
+                stats.incrementBlocksPlaced(amount);
+                break;
+            case "playtime":
+                stats.incrementPlaytimeMinutes(amount);
+                break;
         }
     }
     

@@ -10,8 +10,10 @@ import org.bukkit.entity.Player;
  */
 public class SettingsCommand implements CommandExecutor {
     
+    private final FrogCraftManager plugin;
+    
     public SettingsCommand(FrogCraftManager plugin) {
-        // Plugin-Referenz wird nicht benötigt
+        this.plugin = plugin;
     }
     
     @Override
