@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { query } from "@/lib/db"
 import SettingsPanel from "@/app/components/SettingsPanel"
 import PlayerStats from "@/app/components/PlayerStats"
 import Link from "next/link"
@@ -8,16 +8,10 @@ export default async function PlayerPage({ params }: { params: { username: strin
   const username = decodeURIComponent(params.username)
 
   try {
-    // Spielerdaten direkt von Supabase abrufen
-    const supabase = createServerSupabaseClient()
+    // Spielerdaten direkt aus der Datenbank abrufen
+    const playerResult = await query("SELECT * FROM players WHERE username = $1", [username.toLowerCase()])
 
-    const { data: player, error } = await supabase
-      .from("players")
-      .select("*")
-      .eq("username", username.toLowerCase())
-      .single()
-
-    if (error) {
+    if (playerResult.rows.length === 0) {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4">
           <div className="max-w-md w-full bg-gray-800 rounded-lg border border-gray-700 p-6">
@@ -34,6 +28,7 @@ export default async function PlayerPage({ params }: { params: { username: strin
       )
     }
 
+    const player = playerResult.rows[0]
     const settings = {
       pvp_enabled: player.pvp_enabled || false,
       verified: player.verified || false,
@@ -77,6 +72,7 @@ export default async function PlayerPage({ params }: { params: { username: strin
       </div>
     )
   } catch (error) {
+    console.error("Fehler beim Laden der Spielerdaten:", error)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4">
         <div className="max-w-md w-full bg-gray-800 rounded-lg border border-gray-700 p-6">

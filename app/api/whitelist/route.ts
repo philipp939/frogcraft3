@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { query } from "@/lib/db"
 
 export async function POST(request: Request) {
   try {
@@ -11,35 +11,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Minecraft-Benutzername ist erforderlich" }, { status: 400 })
     }
 
-    const supabase = createServerSupabaseClient()
-
     // Überprüfe, ob der Spieler bereits existiert
-    const { data: existingPlayer } = await supabase
-      .from("players")
-      .select("username")
-      .eq("username", username.toLowerCase())
-      .single()
+    const existingPlayerResult = await query("SELECT username FROM players WHERE username = $1", [
+      username.toLowerCase(),
+    ])
 
-    if (existingPlayer) {
+    if (existingPlayerResult.rows.length > 0) {
       return NextResponse.json({ error: "Spieler ist bereits registriert" }, { status: 400 })
     }
 
     // Spieler zur Datenbank hinzufügen
-    const { error: insertError } = await supabase.from("players").insert([
-      {
-        username: username.toLowerCase(),
-        joined_at: new Date().toISOString(),
-        last_seen: new Date().toISOString(),
-        playtime_minutes: 0,
-        pvp_enabled: false,
-        verified: false,
-        deaths: 0,
-        kills: 0,
-        bounty: 0,
-      },
-    ])
-
-    if (insertError) throw insertError
+    await query(
+      `INSERT INTO players 
+      (username, joined_at, last_seen, playtime_minutes, pvp_enabled, verified, deaths, kills, bounty) 
+      VALUES ($1, NOW(), NOW(), 0, false, false, 0, 0, 0)`,
+      [username.toLowerCase()],
+    )
 
     return NextResponse.json({
       message: "Du wurdest erfolgreich zur Whitelist hinzugefügt!",

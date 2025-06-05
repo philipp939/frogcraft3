@@ -1,49 +1,37 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { query } from "@/lib/db"
 
 export async function GET(request: Request, { params }: { params: { username: string } }) {
   try {
     const username = params.username.toLowerCase()
-    const supabase = createServerSupabaseClient()
 
-    // Spieler abrufen oder erstellen
-    let { data: player, error: playerError } = await supabase
-      .from("players")
-      .select("*")
-      .eq("username", username)
-      .single()
+    // Spieler abrufen
+    const playerResult = await query("SELECT * FROM players WHERE username = $1", [username])
 
-    if (playerError && playerError.code === "PGRST116") {
+    if (playerResult.rows.length === 0) {
       // Spieler existiert nicht, erstellen
-      const { data: newPlayer, error: createError } = await supabase
-        .from("players")
-        .insert([
-          {
-            username,
-            joined_at: new Date().toISOString(),
-            last_seen: new Date().toISOString(),
-            playtime_minutes: 0,
-            pvp_enabled: true,
-            verified: false,
-            deaths: 0,
-            kills: 0,
-            bounty: 0,
-          },
-        ])
-        .select()
-        .single()
+      const newPlayerResult = await query(
+        `INSERT INTO players 
+        (username, joined_at, last_seen, playtime_minutes, pvp_enabled, verified, deaths, kills, bounty) 
+        VALUES ($1, NOW(), NOW(), 0, true, false, 0, 0, 0) 
+        RETURNING *`,
+        [username],
+      )
 
-      if (createError) throw createError
-      player = newPlayer
-    } else if (playerError) {
-      throw playerError
+      return NextResponse.json({
+        player: newPlayerResult.rows[0],
+        settings: {
+          pvp_enabled: newPlayerResult.rows[0].pvp_enabled || false,
+          verified: newPlayerResult.rows[0].verified || false,
+        },
+      })
     }
 
     return NextResponse.json({
-      player,
+      player: playerResult.rows[0],
       settings: {
-        pvp_enabled: player.pvp_enabled || false,
-        verified: player.verified || false,
+        pvp_enabled: playerResult.rows[0].pvp_enabled || false,
+        verified: playerResult.rows[0].verified || false,
       },
     })
   } catch (error) {

@@ -1,35 +1,43 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { query } from "@/lib/db"
 
 export async function POST(request: Request, { params }: { params: { username: string } }) {
   try {
     const username = params.username.toLowerCase()
     const settings = await request.json()
-    const supabase = createServerSupabaseClient()
 
     // Spieler abrufen
-    const { data: player, error: playerError } = await supabase
-      .from("players")
-      .select("uuid")
-      .eq("username", username)
-      .single()
+    const playerResult = await query("SELECT uuid FROM players WHERE username = $1", [username])
 
-    if (playerError) {
+    if (playerResult.rows.length === 0) {
       return NextResponse.json({ error: "Spieler nicht gefunden" }, { status: 404 })
     }
 
     // Einstellungen aktualisieren
-    const updateData: any = {}
+    const updateFields = []
+    const updateValues = []
+    let paramIndex = 1
+
     if (settings.pvp_enabled !== undefined) {
-      updateData.pvp_enabled = settings.pvp_enabled
+      updateFields.push(`pvp_enabled = $${paramIndex}`)
+      updateValues.push(settings.pvp_enabled)
+      paramIndex++
     }
+
     if (settings.verified !== undefined) {
-      updateData.verified = settings.verified
+      updateFields.push(`verified = $${paramIndex}`)
+      updateValues.push(settings.verified)
+      paramIndex++
     }
 
-    const { error: updateError } = await supabase.from("players").update(updateData).eq("uuid", player.uuid)
+    if (updateFields.length === 0) {
+      return NextResponse.json({ error: "Keine Einstellungen zum Aktualisieren" }, { status: 400 })
+    }
 
-    if (updateError) throw updateError
+    // Füge den Spielernamen als letzten Parameter hinzu
+    updateValues.push(username)
+
+    await query(`UPDATE players SET ${updateFields.join(", ")} WHERE username = $${paramIndex}`, updateValues)
 
     return NextResponse.json({ success: true })
   } catch (error) {

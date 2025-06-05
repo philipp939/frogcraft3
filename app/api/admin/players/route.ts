@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { query } from "@/lib/db"
 
 export async function GET() {
   try {
-    const supabase = createServerSupabaseClient()
+    const playersResult = await query(
+      `SELECT uuid, username, joined_at, last_seen, playtime_minutes, 
+      pvp_enabled, verified, deaths, kills, bounty 
+      FROM players ORDER BY joined_at DESC`,
+    )
 
-    const { data: players, error } = await supabase
-      .from("players")
-      .select("uuid, username, joined_at, last_seen, playtime_minutes, pvp_enabled, verified, deaths, kills, bounty")
-      .order("joined_at", { ascending: false })
-
-    if (error) throw error
-
-    return NextResponse.json({ players: players || [] })
+    return NextResponse.json({ players: playersResult.rows || [] })
   } catch (error) {
     console.error("Fehler beim Abrufen der Spieler:", error)
     return NextResponse.json({ error: "Fehler beim Abrufen der Spieler" }, { status: 500 })

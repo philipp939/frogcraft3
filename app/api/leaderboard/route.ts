@@ -1,31 +1,17 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+import { query } from "@/lib/db"
 
 export async function GET() {
   try {
     // Top Kills abrufen
-    const { data: killsData, error: killsError } = await supabase
-      .from("players")
-      .select("username, kills")
-      .order("kills", { ascending: false })
-      .limit(10)
-
-    if (killsError) throw killsError
+    const killsResult = await query("SELECT username, kills FROM players ORDER BY kills DESC LIMIT 10")
 
     // Top Bounty abrufen
-    const { data: bountyData, error: bountyError } = await supabase
-      .from("players")
-      .select("username, bounty")
-      .order("bounty", { ascending: false })
-      .limit(10)
-
-    if (bountyError) throw bountyError
+    const bountyResult = await query("SELECT username, bounty FROM players ORDER BY bounty DESC LIMIT 10")
 
     return NextResponse.json({
-      kills: killsData || [],
-      bounty: bountyData || [],
+      kills: killsResult.rows || [],
+      bounty: bountyResult.rows || [],
     })
   } catch (error) {
     console.error("Fehler beim Abrufen der Leaderboards:", error)

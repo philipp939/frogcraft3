@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { query } from "@/lib/db"
 
 // GET: Spieler-Einstellungen für den Minecraft-Server abrufen
 export async function GET(request: Request) {
@@ -12,17 +12,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
     }
 
-    const supabase = createServerSupabaseClient()
-
     // Alle Spieler mit ihren Einstellungen abrufen
-    const { data: players, error: playersError } = await supabase
-      .from("players")
-      .select("username, pvp_enabled, verified")
-
-    if (playersError) throw playersError
+    const playersResult = await query("SELECT username, pvp_enabled, verified FROM players")
 
     // Daten in ein für den Minecraft-Server geeignetes Format umwandeln
-    const formattedPlayers = players.map((player) => ({
+    const formattedPlayers = playersResult.rows.map((player) => ({
       username: player.username,
       settings: {
         pvp_enabled: player.pvp_enabled || false,
@@ -57,22 +51,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Keine Spielerstatistiken zum Aktualisieren" }, { status: 400 })
     }
 
-    const supabase = createServerSupabaseClient()
-
     // Spieler-Statistiken aktualisieren
     for (const stat of playerStats) {
       if (!stat.username) continue
 
-      const updateData: any = {
-        last_seen: new Date().toISOString(),
+      const updateFields = ["last_seen = NOW()"]
+      const updateValues = []
+      let paramIndex = 1
+
+      if (stat.playtime !== undefined) {
+        updateFields.push(`playtime_minutes = $${paramIndex}`)
+        updateValues.push(stat.playtime)
+        paramIndex++
       }
 
-      if (stat.playtime !== undefined) updateData.playtime_minutes = stat.playtime
-      if (stat.deaths !== undefined) updateData.deaths = stat.deaths
-      if (stat.kills !== undefined) updateData.kills = stat.kills
-      if (stat.bounty !== undefined) updateData.bounty = stat.bounty
+      if (stat.deaths !== undefined) {
+        updateFields.push(`deaths = $${paramIndex}`)
+        updateValues.push(stat.deaths)
+        paramIndex++
+      }
 
-      await supabase.from("players").update(updateData).eq("username", stat.username.toLowerCase())
+      if (stat.kills !== undefined) {
+        updateFields.push(`kills = $${paramIndex}`)
+        updateValues.push(stat.kills)
+        paramIndex++
+      }
+
+      if (stat.bounty !== undefined) {
+        updateFields.push(`bounty = $${paramIndex}`)
+        updateValues.push(stat.bounty)
+        paramIndex++
+      }
+
+      // Füge den Spielernamen als letzten Parameter hinzu
+      updateValues.push(stat.username.toLowerCase())
+
+      await query(`UPDATE players SET ${updateFields.join(", ")} WHERE username = $${paramIndex}`, updateValues)
     }
 
     return NextResponse.json({
