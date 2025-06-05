@@ -17,10 +17,12 @@ import Link from "next/link"
 interface Player {
   id: number
   username: string
-  uuid: string
-  created_at: string
-  last_login: string
-  is_online: boolean
+  joined_at: string
+  last_seen: string
+  playtime_minutes: number
+  pvp_enabled: boolean
+  verified: boolean
+  deaths: number
   kills: number
   bounty: number
 }
@@ -239,7 +241,7 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{players.length}</div>
-              <p className="text-xs text-gray-400">{players.filter((p) => p.is_online).length} online</p>
+              <p className="text-xs text-gray-400">{players.filter((p) => p.pvp_enabled).length} mit PVP</p>
             </CardContent>
           </Card>
 
@@ -264,7 +266,7 @@ export default function AdminPage() {
                 {
                   players.filter((p) => {
                     const today = new Date().toDateString()
-                    const playerDate = new Date(p.created_at).toDateString()
+                    const playerDate = new Date(p.joined_at).toDateString()
                     return today === playerDate
                   }).length
                 }
@@ -316,13 +318,18 @@ export default function AdminPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <p className="text-white font-medium">{player.username}</p>
-                          <Badge variant={player.is_online ? "default" : "secondary"} className="rounded-full">
-                            {player.is_online ? "Online" : "Offline"}
+                          <Badge variant={player.pvp_enabled ? "destructive" : "default"} className="rounded-full">
+                            {player.pvp_enabled ? "PVP" : "Friedlich"}
                           </Badge>
+                          {player.verified && (
+                            <Badge variant="secondary" className="rounded-full">
+                              Verifiziert
+                            </Badge>
+                          )}
                         </div>
-                        <p className="text-gray-400 text-sm">Registriert: {formatDate(player.created_at)}</p>
+                        <p className="text-gray-400 text-sm">Registriert: {formatDate(player.joined_at)}</p>
                         <p className="text-gray-400 text-sm">
-                          Letzter Login: {player.last_login ? formatDate(player.last_login) : "Nie"}
+                          Letzter Login: {player.last_seen ? formatDate(player.last_seen) : "Nie"}
                         </p>
                         <div className="flex gap-4 text-sm">
                           <span className="text-red-400">Kills: {player.kills || 0}</span>
