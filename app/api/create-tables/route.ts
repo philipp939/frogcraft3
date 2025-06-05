@@ -21,3 +21,4 @@ export async function GET() {
     return NextResponse.json({ error: "Ein Fehler ist aufgetreten" }, { status: 500 })
   }
 }
+
