@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Users, Gamepad2, Crown, Trophy, Coins } from "lucide-react"
+import { Crown, Trophy, Coins, Gamepad2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import PlayerDashboardModal from "./components/PlayerDashboardModal"
 
 interface LeaderboardPlayer {
   username: string
@@ -45,11 +46,6 @@ export default function HomePage() {
               <h1 className="text-2xl font-bold text-white">FrogCraft</h1>
             </div>
             <nav className="flex items-center space-x-4">
-              <Link href="/dashboard">
-                <Button variant="ghost" className="text-white hover:text-purple-300">
-                  Dashboard
-                </Button>
-              </Link>
               <Link href="/admin">
                 <Button variant="ghost" className="text-white hover:text-purple-300">
                   <Crown className="h-4 w-4 mr-2" />
@@ -72,12 +68,7 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/dashboard">
-              <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white">
-                <Users className="h-5 w-5 mr-2" />
-                Spieler Dashboard
-              </Button>
-            </Link>
+            <PlayerDashboardModal />
           </div>
         </div>
       </section>
@@ -175,7 +166,7 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <code className="text-purple-400 text-lg font-mono">frog-craft.de</code>
-                <p className="text-gray-400 mt-2">Minecraft Version 1.21.4</p>
+                <p className="text-gray-400 mt-2">Minecraft Version 1.21.6</p>
               </CardContent>
             </Card>
 

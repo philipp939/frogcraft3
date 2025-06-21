@@ -3,10 +3,10 @@ import { query } from "@/lib/db"
 
 export async function GET() {
   try {
-    // Top Kills abrufen
+    // Top Kills abrufen (sortiert nach kills DESC)
     const killsResult = await query("SELECT username, kills FROM players ORDER BY kills DESC LIMIT 10")
 
-    // Top Bounty abrufen
+    // Top Bounty abrufen (sortiert nach bounty DESC - höchste bounty zuerst)
     const bountyResult = await query("SELECT username, bounty FROM players ORDER BY bounty DESC LIMIT 10")
 
     return NextResponse.json({

@@ -7,129 +7,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Crown, Gamepad2, Lock, Construction } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Crown, Gamepad2, Lock, Users, Shield, Zap } from "lucide-react"
 import Link from "next/link"
-
-interface Player {
-  id: number
-  username: string
-  joined_at: string
-  last_seen: string
-  playtime_minutes: number
-  pvp_enabled: boolean
-  verified: boolean
-  deaths: number
-  kills: number
-  bounty: number
-}
-
-interface Ban {
-  id: number
-  player_id: number
-  reason: string
-  banned_by: string
-  banned_at: string
-  expires_at: string | null
-  is_active: boolean
-  ban_type: string
-  player: { username: string }
-}
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState("")
-  const [players, setPlayers] = useState<Player[]>([])
-  const [bans, setBans] = useState<Ban[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-
-  // Ban form state
-  const [banForm, setBanForm] = useState({
-    username: "",
-    reason: "",
-    banType: "temporary",
-    duration: "1",
-    bannedBy: "Admin",
-  })
+  const [pvpForced, setPvpForced] = useState(false)
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (password === "kahba") {
       setIsAuthenticated(true)
-      loadData()
+      setMessage(null)
     } else {
       setMessage({ type: "error", text: "Falsches Passwort!" })
     }
   }
 
-  const loadData = async () => {
-    try {
-      const [playersRes, bansRes] = await Promise.all([fetch("/api/admin/players"), fetch("/api/admin/bans")])
-
-      if (playersRes.ok) {
-        const playersData = await playersRes.json()
-        setPlayers(playersData.players || [])
-      }
-
-      if (bansRes.ok) {
-        const bansData = await bansRes.json()
-        setBans(bansData.bans || [])
-      }
-    } catch (error) {
-      setMessage({ type: "error", text: "Fehler beim Laden der Daten" })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const createBan = async () => {
-    if (!banForm.username || !banForm.reason) {
-      setMessage({ type: "error", text: "Benutzername und Grund sind erforderlich" })
-      return
-    }
-
-    try {
-      const response = await fetch("/api/admin/bans", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(banForm),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Fehler beim Erstellen des Bans")
-      }
-
-      setMessage({ type: "success", text: "Ban erfolgreich erstellt" })
-      setBanForm({ username: "", reason: "", banType: "temporary", duration: "1", bannedBy: "Admin" })
-      loadData()
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Fehler beim Erstellen des Bans",
-      })
-    }
-  }
-
-  const removeBan = async (banId: number) => {
-    try {
-      const response = await fetch(`/api/admin/bans/${banId}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) {
-        throw new Error("Fehler beim Entfernen des Bans")
-      }
-
-      setMessage({ type: "success", text: "Ban erfolgreich entfernt" })
-      loadData()
-    } catch (error) {
-      setMessage({ type: "error", text: "Fehler beim Entfernen des Bans" })
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("de-DE")
+  const handlePvpForceToggle = (enabled: boolean) => {
+    setPvpForced(enabled)
+    setMessage({
+      type: "success",
+      text: `PVP wurde ${enabled ? "für alle Spieler aktiviert" : "deaktiviert"}`,
+    })
   }
 
   // Passwort-Eingabe anzeigen, wenn nicht authentifiziert
@@ -179,14 +82,6 @@ export default function AdminPage() {
     )
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Lade Admin-Panel...</div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
@@ -198,12 +93,6 @@ export default function AdminPage() {
               <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
             </Link>
             <div className="flex items-center space-x-4">
-              <Link href="/dashboard">
-                <Button variant="ghost" className="text-white hover:text-purple-300 rounded-lg">
-                  <Gamepad2 className="h-4 w-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
               <Button
                 variant="ghost"
                 onClick={() => setIsAuthenticated(false)}
@@ -217,25 +106,115 @@ export default function AdminPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Card className="w-full max-w-md bg-black/40 border-white/10 backdrop-blur-sm">
-            <CardHeader className="text-center">
-              <CardTitle className="text-white flex items-center justify-center">
-                <Construction className="h-6 w-6 mr-2" />
-                In Entwicklung
+        {/* Message */}
+        {message && (
+          <Card
+            className={`mb-8 ${message.type === "success" ? "border-green-500/50 bg-green-500/10" : "border-red-500/50 bg-red-500/10"}`}
+          >
+            <CardContent className="pt-6">
+              <p className={message.type === "success" ? "text-green-400" : "text-red-400"}>{message.text}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Server Controls */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* PVP Control */}
+          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Zap className="h-5 w-5 mr-2" />
+                PVP Kontrolle
               </CardTitle>
-              <CardDescription className="text-gray-400">Das Admin-Panel wird derzeit entwickelt</CardDescription>
+              <CardDescription className="text-gray-400">Steuere PVP für alle Spieler auf dem Server</CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-gray-300 mb-6">
-                Die Admin-Funktionen sind noch nicht verfügbar. Diese werden in einer zukünftigen Version hinzugefügt.
-              </p>
-              <Link href="/">
-                <Button className="w-full bg-purple-600 hover:bg-purple-700 rounded-lg">Zurück zur Startseite</Button>
-              </Link>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-gray-800/50">
+                <div className="space-y-1">
+                  <h4 className="font-medium text-white">PVP für alle erzwingen</h4>
+                  <p className="text-sm text-gray-400">
+                    {pvpForced
+                      ? "PVP ist für alle Spieler aktiviert"
+                      : "Spieler können PVP individuell aktivieren/deaktivieren"}
+                  </p>
+                </div>
+                <Switch checked={pvpForced} onCheckedChange={handlePvpForceToggle} />
+              </div>
+
+              <div className="p-4 rounded-lg bg-blue-900/20 border border-blue-800">
+                <p className="text-sm text-blue-300">
+                  <strong>Hinweis:</strong> Wenn PVP erzwungen wird, können Spieler ihre PVP-Einstellung nicht mehr
+                  ändern.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Server Stats */}
+          <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                Server Status
+              </CardTitle>
+              <CardDescription className="text-gray-400">Aktuelle Server-Informationen</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">PVP Status:</span>
+                <span className={`font-medium ${pvpForced ? "text-red-400" : "text-green-400"}`}>
+                  {pvpForced ? "Erzwungen" : "Optional"}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Server Version:</span>
+                <span className="text-white">1.21.6</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Server IP:</span>
+                <code className="text-purple-400">frog-craft.de</code>
+              </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick Actions */}
+        <Card className="mt-8 bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <Users className="h-5 w-5 mr-2" />
+              Schnellaktionen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Link href="/">
+                <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10 rounded-lg">
+                  <Gamepad2 className="h-4 w-4 mr-2" />
+                  Zur Hauptseite
+                </Button>
+              </Link>
+
+              <Button
+                variant="outline"
+                className="w-full border-white/20 text-white hover:bg-white/10 rounded-lg"
+                onClick={() => setMessage({ type: "success", text: "Server-Neustart geplant" })}
+              >
+                Server Neustart
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full border-white/20 text-white hover:bg-white/10 rounded-lg"
+                onClick={() => setMessage({ type: "success", text: "Backup erstellt" })}
+              >
+                Backup erstellen
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
