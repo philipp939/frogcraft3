@@ -50,7 +50,8 @@ export default function PlayerDashboardModal() {
     setCurrentPlayer(null)
 
     try {
-      const response = await fetch(`/api/player/${encodeURIComponent(searchUsername)}`)
+      // Genau wie beim Leaderboard - einfacher GET Request
+      const response = await fetch(`/api/player-search?username=${encodeURIComponent(searchUsername)}`)
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -62,6 +63,7 @@ export default function PlayerDashboardModal() {
       const data = await response.json()
       setCurrentPlayer(data.player)
     } catch (error) {
+      console.error("Fehler beim Laden der Spielerdaten:", error)
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Fehler beim Laden der Spielerdaten",
