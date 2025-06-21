@@ -7,15 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Crown, Gamepad2, Lock, Users, Shield, Zap } from "lucide-react"
 import Link from "next/link"
+
+type PvpMode = "forced_on" | "forced_off" | "player_choice"
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState("")
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const [pvpForced, setPvpForced] = useState(false)
+  const [pvpMode, setPvpMode] = useState<PvpMode>("player_choice")
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,19 +29,35 @@ export default function AdminPage() {
     }
   }
 
-  const handlePvpForceToggle = (enabled: boolean) => {
-    setPvpForced(enabled)
+  const handlePvpModeChange = (mode: PvpMode) => {
+    setPvpMode(mode)
+    const modeTexts = {
+      forced_on: "PVP wurde für alle Spieler erzwungen (AN)",
+      forced_off: "PVP wurde für alle Spieler erzwungen (AUS)",
+      player_choice: "Spieler können PVP selbst aktivieren/deaktivieren",
+    }
     setMessage({
       type: "success",
-      text: `PVP wurde ${enabled ? "für alle Spieler aktiviert" : "deaktiviert"}`,
+      text: modeTexts[mode],
     })
+  }
+
+  const getPvpModeDescription = (mode: PvpMode) => {
+    switch (mode) {
+      case "forced_on":
+        return "PVP ist für alle Spieler aktiviert und kann nicht deaktiviert werden"
+      case "forced_off":
+        return "PVP ist für alle Spieler deaktiviert und kann nicht aktiviert werden"
+      case "player_choice":
+        return "Spieler können PVP individuell aktivieren oder deaktivieren"
+    }
   }
 
   // Passwort-Eingabe anzeigen, wenn nicht authentifiziert
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <Card className="w-full max-w-md bg-black/40 border-white/10 backdrop-blur-sm">
+        <Card className="w-full max-w-md bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
           <CardHeader className="text-center">
             <CardTitle className="text-white flex items-center justify-center">
               <Lock className="h-6 w-6 mr-2" />
@@ -109,7 +127,7 @@ export default function AdminPage() {
         {/* Message */}
         {message && (
           <Card
-            className={`mb-8 ${message.type === "success" ? "border-green-500/50 bg-green-500/10" : "border-red-500/50 bg-red-500/10"}`}
+            className={`mb-8 rounded-xl ${message.type === "success" ? "border-green-500/50 bg-green-500/10" : "border-red-500/50 bg-red-500/10"}`}
           >
             <CardContent className="pt-6">
               <p className={message.type === "success" ? "text-green-400" : "text-red-400"}>{message.text}</p>
@@ -129,16 +147,28 @@ export default function AdminPage() {
               <CardDescription className="text-gray-400">Steuere PVP für alle Spieler auf dem Server</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-gray-800/50">
-                <div className="space-y-1">
-                  <h4 className="font-medium text-white">PVP für alle erzwingen</h4>
-                  <p className="text-sm text-gray-400">
-                    {pvpForced
-                      ? "PVP ist für alle Spieler aktiviert"
-                      : "Spieler können PVP individuell aktivieren/deaktivieren"}
-                  </p>
-                </div>
-                <Switch checked={pvpForced} onCheckedChange={handlePvpForceToggle} />
+              <div className="space-y-4">
+                <Label className="text-white">PVP-Modus</Label>
+                <Select value={pvpMode} onValueChange={(value: PvpMode) => handlePvpModeChange(value)}>
+                  <SelectTrigger className="bg-black/20 border-white/20 text-white rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 rounded-lg">
+                    <SelectItem value="player_choice" className="text-white hover:bg-gray-700 rounded-md">
+                      Spieler entscheidet selbst
+                    </SelectItem>
+                    <SelectItem value="forced_on" className="text-white hover:bg-gray-700 rounded-md">
+                      PVP für alle erzwingen (AN)
+                    </SelectItem>
+                    <SelectItem value="forced_off" className="text-white hover:bg-gray-700 rounded-md">
+                      PVP für alle erzwingen (AUS)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="p-4 rounded-lg border border-gray-700 bg-gray-800/50">
+                <p className="text-sm text-gray-300">{getPvpModeDescription(pvpMode)}</p>
               </div>
 
               <div className="p-4 rounded-lg bg-blue-900/20 border border-blue-800">
@@ -162,8 +192,20 @@ export default function AdminPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">PVP Status:</span>
-                <span className={`font-medium ${pvpForced ? "text-red-400" : "text-green-400"}`}>
-                  {pvpForced ? "Erzwungen" : "Optional"}
+                <span
+                  className={`font-medium ${
+                    pvpMode === "forced_on"
+                      ? "text-red-400"
+                      : pvpMode === "forced_off"
+                        ? "text-orange-400"
+                        : "text-green-400"
+                  }`}
+                >
+                  {pvpMode === "forced_on"
+                    ? "Erzwungen (AN)"
+                    : pvpMode === "forced_off"
+                      ? "Erzwungen (AUS)"
+                      : "Optional"}
                 </span>
               </div>
 
