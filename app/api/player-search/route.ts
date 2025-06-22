@@ -40,4 +40,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Fehler beim Abrufen der Spielerdaten" }, { status: 500 })
   }
 }
-
