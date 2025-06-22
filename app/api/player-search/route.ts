@@ -10,8 +10,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Benutzername ist erforderlich" }, { status: 400 })
     }
 
-    // Spieler aus Datenbank abrufen (genau wie beim Leaderboard)
-    const playerResult = await query("SELECT * FROM players WHERE username = $1", [username.toLowerCase()])
+    const playerResult = await query(
+      "SELECT * FROM players WHERE LOWER(username) = LOWER($1)",
+      [username]
+    )
 
     if (playerResult.rows.length === 0) {
       return NextResponse.json({ error: "Spieler nicht gefunden" }, { status: 404 })
@@ -38,3 +40,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Fehler beim Abrufen der Spielerdaten" }, { status: 500 })
   }
 }
+
