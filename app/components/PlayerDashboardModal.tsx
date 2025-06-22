@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -39,8 +39,26 @@ export default function PlayerDashboardModal() {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  // Simuliere PVP Mode (später aus Admin Panel API holen)
-  const [pvpMode] = useState<PvpMode>("player_choice") // Du kannst das später dynamisch machen
+  const [pvpMode, setPvpMode] = useState<PvpMode>("player_choice")
+  const [pvpModeLoading, setPvpModeLoading] = useState(false)
+
+  // PVP-Modus beim Öffnen des Modals laden
+  useEffect(() => {
+    if (isOpen) {
+      const loadPvpMode = async () => {
+        try {
+          const response = await fetch("/api/admin/pvp-mode")
+          if (response.ok) {
+            const data = await response.json()
+            setPvpMode(data.pvpMode)
+          }
+        } catch (error) {
+          console.error("Fehler beim Laden des PVP-Modus:", error)
+        }
+      }
+      loadPvpMode()
+    }
+  }, [isOpen])
 
   const searchPlayer = async () => {
     if (!searchUsername.trim()) return
@@ -94,6 +112,42 @@ export default function PlayerDashboardModal() {
       return "PVP wurde vom Server für alle Spieler erzwungen (AUS)"
     }
     return ""
+  }
+
+  const handlePvpToggle = async (checked: boolean) => {
+    if (!currentPlayer) return
+
+    setPvpModeLoading(true)
+    try {
+      const response = await fetch("/api/player-pvp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: currentPlayer.username,
+          pvpEnabled: checked,
+        }),
+      })
+
+      if (response.ok) {
+        setCurrentPlayer((prev) => (prev ? { ...prev, pvp_enabled: checked } : null))
+        setMessage({
+          type: "success",
+          text: `PVP ${checked ? "aktiviert" : "deaktiviert"}`,
+        })
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Fehler beim Aktualisieren der PVP-Einstellung")
+      }
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Fehler beim Aktualisieren der PVP-Einstellung",
+      })
+    } finally {
+      setPvpModeLoading(false)
+    }
   }
 
   return (
@@ -194,11 +248,7 @@ export default function PlayerDashboardModal() {
                       <span className="text-white">{currentPlayer.bounty || 0} Coins</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Beigetreten:</span>
-                      <span className="text-white">{formatDate(currentPlayer.joined_at)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Zuletzt gesehen:</span>
+                      <span className="text-gray-400">Zuletzt online:</span>
                       <span className="text-white">{formatDate(currentPlayer.last_seen)}</span>
                     </div>
                   </CardContent>
@@ -250,14 +300,10 @@ export default function PlayerDashboardModal() {
                           </Tooltip>
                         ) : (
                           <Switch
-                            checked={currentPlayer.pvp_enabled}
-                            onCheckedChange={(checked) => {
-                              setCurrentPlayer((prev) => (prev ? { ...prev, pvp_enabled: checked } : null))
-                              setMessage({
-                                type: "success",
-                                text: `PVP ${checked ? "aktiviert" : "deaktiviert"}`,
-                              })
-                            }}
+                            checked={isPvpForced ? pvpMode === "forced_on" : currentPlayer.pvp_enabled}
+                            disabled={isPvpForced || pvpModeLoading}
+                            onCheckedChange={handlePvpToggle}
+                            className={isPvpForced ? "opacity-50 cursor-not-allowed" : ""}
                           />
                         )}
                       </div>

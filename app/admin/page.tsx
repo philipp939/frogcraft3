@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,26 @@ export default function AdminPage() {
   const [password, setPassword] = useState("")
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [pvpMode, setPvpMode] = useState<PvpMode>("player_choice")
+  const [isLoading, setIsLoading] = useState(false)
+
+  // PVP-Modus beim Laden abrufen
+  useEffect(() => {
+    const loadPvpMode = async () => {
+      try {
+        const response = await fetch("/api/admin/pvp-mode")
+        if (response.ok) {
+          const data = await response.json()
+          setPvpMode(data.pvpMode)
+        }
+      } catch (error) {
+        console.error("Fehler beim Laden des PVP-Modus:", error)
+      }
+    }
+
+    if (isAuthenticated) {
+      loadPvpMode()
+    }
+  }, [isAuthenticated])
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,17 +49,42 @@ export default function AdminPage() {
     }
   }
 
-  const handlePvpModeChange = (mode: PvpMode) => {
-    setPvpMode(mode)
-    const modeTexts = {
-      forced_on: "PVP wurde für alle Spieler erzwungen (AN)",
-      forced_off: "PVP wurde für alle Spieler erzwungen (AUS)",
-      player_choice: "Spieler können PVP selbst aktivieren/deaktivieren",
+  const handlePvpModeChange = async (mode: PvpMode) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/admin/pvp-mode", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pvpMode: mode,
+          adminPassword: "kahba",
+        }),
+      })
+
+      if (response.ok) {
+        setPvpMode(mode)
+        const modeTexts = {
+          forced_on: "PVP wurde für alle Spieler erzwungen (AN) - Alle Spieler wurden aktualisiert",
+          forced_off: "PVP wurde für alle Spieler erzwungen (AUS) - Alle Spieler wurden aktualisiert",
+          player_choice: "Spieler können PVP selbst aktivieren/deaktivieren",
+        }
+        setMessage({
+          type: "success",
+          text: modeTexts[mode],
+        })
+      } else {
+        throw new Error("Fehler beim Aktualisieren des PVP-Modus")
+      }
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: "Fehler beim Aktualisieren des PVP-Modus",
+      })
+    } finally {
+      setIsLoading(false)
     }
-    setMessage({
-      type: "success",
-      text: modeTexts[mode],
-    })
   }
 
   const getPvpModeDescription = (mode: PvpMode) => {
@@ -149,7 +194,11 @@ export default function AdminPage() {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <Label className="text-white">PVP-Modus</Label>
-                <Select value={pvpMode} onValueChange={(value: PvpMode) => handlePvpModeChange(value)}>
+                <Select
+                  value={pvpMode}
+                  onValueChange={(value: PvpMode) => handlePvpModeChange(value)}
+                  disabled={isLoading}
+                >
                   <SelectTrigger className="bg-black/20 border-white/20 text-white rounded-lg">
                     <SelectValue />
                   </SelectTrigger>
