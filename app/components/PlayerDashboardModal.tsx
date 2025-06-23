@@ -28,6 +28,7 @@ interface Player {
   deaths: number
   kills: number
   bounty: number
+  balance: number
 }
 
 type PvpMode = "forced_on" | "forced_off" | "player_choice"
@@ -51,6 +52,7 @@ export default function PlayerDashboardModal() {
           if (response.ok) {
             const data = await response.json()
             setPvpMode(data.pvpMode)
+            console.log("Loaded PVP Mode:", data.pvpMode) // Debug Log
           }
         } catch (error) {
           console.error("Fehler beim Laden des PVP-Modus:", error)
@@ -79,6 +81,7 @@ export default function PlayerDashboardModal() {
       }
 
       const data = await response.json()
+      console.log("Player data loaded:", data.player) // Debug Log
       setCurrentPlayer(data.player)
     } catch (error) {
       console.error("Fehler beim Laden der Spielerdaten:", error)
@@ -91,9 +94,24 @@ export default function PlayerDashboardModal() {
     }
   }
 
-  const formatDate = (dateString: string) => {
+  const formatLastSeen = (dateString: string) => {
     if (!dateString) return "Nie"
-    return new Date(dateString).toLocaleString("de-DE")
+
+    const lastSeen = new Date(dateString)
+    const now = new Date()
+    const diffInMs = now.getTime() - lastSeen.getTime()
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+    const diffInDays = Math.floor(diffInHours / 24)
+
+    if (diffInHours < 1) {
+      return "Gerade online"
+    } else if (diffInHours < 24) {
+      return `vor ${diffInHours} Stunde${diffInHours !== 1 ? "n" : ""}`
+    } else if (diffInDays === 1) {
+      return "vor 1 Tag"
+    } else {
+      return `vor ${diffInDays} Tagen`
+    }
   }
 
   const formatPlaytime = (minutes: number) => {
@@ -117,6 +135,8 @@ export default function PlayerDashboardModal() {
   const handlePvpToggle = async (checked: boolean) => {
     if (!currentPlayer) return
 
+    console.log("PVP Toggle clicked:", { username: currentPlayer.username, checked, pvpMode }) // Debug Log
+
     setPvpModeLoading(true)
     try {
       const response = await fetch("/api/player-pvp", {
@@ -130,7 +150,12 @@ export default function PlayerDashboardModal() {
         }),
       })
 
+      console.log("PVP Toggle Response Status:", response.status) // Debug Log
+
       if (response.ok) {
+        const responseData = await response.json()
+        console.log("PVP Toggle Response Data:", responseData) // Debug Log
+
         setCurrentPlayer((prev) => (prev ? { ...prev, pvp_enabled: checked } : null))
         setMessage({
           type: "success",
@@ -138,9 +163,11 @@ export default function PlayerDashboardModal() {
         })
       } else {
         const errorData = await response.json()
+        console.error("PVP Toggle Error:", errorData) // Debug Log
         throw new Error(errorData.error || "Fehler beim Aktualisieren der PVP-Einstellung")
       }
     } catch (error) {
+      console.error("PVP Toggle Exception:", error) // Debug Log
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Fehler beim Aktualisieren der PVP-Einstellung",
@@ -207,6 +234,17 @@ export default function PlayerDashboardModal() {
               </CardContent>
             </Card>
 
+            {/* Debug Info */}
+            {currentPlayer && (
+              <Card className="bg-blue-900/20 border-blue-700 rounded-xl">
+                <CardContent className="pt-6">
+                  <p className="text-blue-300 text-sm">
+                    Debug: PVP Mode = {pvpMode}, Player PVP = {currentPlayer.pvp_enabled ? "true" : "false"}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Message */}
             {message && (
               <Card
@@ -248,8 +286,12 @@ export default function PlayerDashboardModal() {
                       <span className="text-white">{currentPlayer.bounty || 0} Coins</span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="text-gray-400">Balance:</span>
+                      <span className="text-white">{currentPlayer.balance || 0} $</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-gray-400">Zuletzt online:</span>
-                      <span className="text-white">{formatDate(currentPlayer.last_seen)}</span>
+                      <span className="text-white">{formatLastSeen(currentPlayer.last_seen)}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -300,10 +342,9 @@ export default function PlayerDashboardModal() {
                           </Tooltip>
                         ) : (
                           <Switch
-                            checked={isPvpForced ? pvpMode === "forced_on" : currentPlayer.pvp_enabled}
-                            disabled={isPvpForced || pvpModeLoading}
+                            checked={currentPlayer.pvp_enabled}
+                            disabled={pvpModeLoading}
                             onCheckedChange={handlePvpToggle}
-                            className={isPvpForced ? "opacity-50 cursor-not-allowed" : ""}
                           />
                         )}
                       </div>
