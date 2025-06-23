@@ -1,24 +1,33 @@
-import { NextResponse } from "next/server"
-import { query } from "@/lib/db"
+import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
 
 export async function GET() {
   try {
-    // Top Kills abrufen (sortiert nach kills DESC)
-    const killsResult = await query("SELECT username, kills FROM players ORDER BY kills DESC LIMIT 10")
+    const result = await query("SELECT username, kills, bounty, balance FROM players");
+    const players = result.rows || [];
 
-    // Top Bounty abrufen (sortiert nach bounty DESC - höchste bounty zuerst)
-    const bountyResult = await query("SELECT username, bounty FROM players ORDER BY bounty DESC LIMIT 10")
+    const topKills = players
+      .slice()
+      .sort((a, b) => b.kills - a.kills)
+      .slice(0, 5);
 
-    // Top Balance abrufen (sortiert nach balance DESC - höchste balance zuerst)
-    const balanceResult = await query("SELECT username, balance FROM players ORDER BY balance DESC LIMIT 10")
+    const topBounty = players
+      .slice()
+      .sort((a, b) => b.bounty - a.bounty)
+      .slice(0, 5);
+
+    const topBalance = players
+      .slice()
+      .sort((a, b) => b.balance - a.balance)
+      .slice(0, 5);
 
     return NextResponse.json({
-      kills: killsResult.rows || [],
-      bounty: bountyResult.rows || [],
-      balance: balanceResult.rows || [],
-    })
+      kills: topKills,
+      bounty: topBounty,
+      balance: topBalance,
+    });
   } catch (error) {
-    console.error("Fehler beim Abrufen der Leaderboards:", error)
-    return NextResponse.json({ error: "Fehler beim Abrufen der Leaderboards" }, { status: 500 })
+    console.error("Fehler beim Abrufen der Leaderboards:", error);
+    return NextResponse.json({ error: "Fehler beim Abrufen der Leaderboards" }, { status: 500 });
   }
 }
