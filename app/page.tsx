@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Crown, Trophy, Coins, Gamepad2 } from "lucide-react"
+import { Crown, Trophy, Coins, Gamepad2, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import PlayerDashboardModal from "./components/PlayerDashboardModal"
@@ -11,11 +11,13 @@ interface LeaderboardPlayer {
   username: string
   kills?: number
   bounty?: number
+  balance?: number
 }
 
 export default function HomePage() {
   const [killsLeaderboard, setKillsLeaderboard] = useState<LeaderboardPlayer[]>([])
   const [bountyLeaderboard, setBountyLeaderboard] = useState<LeaderboardPlayer[]>([])
+  const [balanceLeaderboard, setBalanceLeaderboard] = useState<LeaderboardPlayer[]>([])
 
   // Leaderboards laden
   useEffect(() => {
@@ -26,6 +28,7 @@ export default function HomePage() {
           const data = await response.json()
           setKillsLeaderboard(data.kills || [])
           setBountyLeaderboard(data.bounty || [])
+          setBalanceLeaderboard(data.balance || [])
         }
       } catch (error) {
         console.error("Fehler beim Laden der Leaderboards:", error)
@@ -77,7 +80,7 @@ export default function HomePage() {
       <section className="py-16 px-4">
         <div className="container mx-auto">
           <h3 className="text-3xl font-bold text-white text-center mb-12">Leaderboards</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {/* Kills Leaderboard */}
             <div className="leaderboard-card p-6">
               <div className="flex items-center mb-6">
@@ -142,6 +145,43 @@ export default function HomePage() {
                         <span className="text-white font-medium">{player.username}</span>
                       </div>
                       <span className="text-yellow-400 font-bold">{player.bounty || 0} Coins</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-400 py-8">
+                    <p>Noch keine Daten verfügbar</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Balance Leaderboard */}
+            <div className="leaderboard-card p-6">
+              <div className="flex items-center mb-6">
+                <Wallet className="h-6 w-6 text-green-400 mr-2" />
+                <h4 className="text-xl font-bold text-white">Top Balance</h4>
+              </div>
+              <div className="space-y-3">
+                {balanceLeaderboard.length > 0 ? (
+                  balanceLeaderboard.slice(0, 5).map((player, index) => (
+                    <div key={player.username} className="leaderboard-item p-3 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div
+                          className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
+                            index === 0
+                              ? "bg-yellow-500 text-black rounded-full"
+                              : index === 1
+                                ? "bg-gray-400 text-black rounded-full"
+                                : index === 2
+                                  ? "bg-amber-600 text-black rounded-full"
+                                  : "bg-gray-600 text-white rounded-full"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className="text-white font-medium">{player.username}</span>
+                      </div>
+                      <span className="text-green-400 font-bold">{player.balance || 0} $</span>
                     </div>
                   ))
                 ) : (
