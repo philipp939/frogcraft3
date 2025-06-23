@@ -52,11 +52,12 @@ export async function POST(request: Request) {
       [pvpMode],
     )
 
-    // Bei forced_on oder forced_off alle Spieler updaten
+    // Bei forced_on oder forced_off alle Spieler updaten UND verified auf true setzen
+    // Bei player_choice passiert nichts mit der Datenbank
     if (pvpMode === "forced_on") {
-      await query("UPDATE players SET pvp_enabled = true")
+      await query("UPDATE players SET pvp_enabled = true, verified = true")
     } else if (pvpMode === "forced_off") {
-      await query("UPDATE players SET pvp_enabled = false")
+      await query("UPDATE players SET pvp_enabled = false, verified = true")
     }
 
     return NextResponse.json({

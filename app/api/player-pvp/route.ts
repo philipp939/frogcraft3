@@ -7,23 +7,16 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { username, pvpEnabled } = body
 
-    console.log("=== PVP Toggle API Start ===")
-    console.log("Request body:", { username, pvpEnabled })
-
     if (!username) {
-      console.log("Error: No username provided")
       return NextResponse.json({ error: "Benutzername ist erforderlich" }, { status: 400 })
     }
 
     // Prüfe aktuellen PVP-Modus
-    console.log("Checking PVP mode...")
     const modeResult = await query("SELECT setting_value FROM server_settings WHERE setting_key = 'pvp_mode'")
     const pvpMode = modeResult.rows.length > 0 ? modeResult.rows[0].setting_value : "player_choice"
-    console.log("PVP Mode:", pvpMode)
 
     // Wenn PVP erzwungen wird, erlaube keine Änderungen
     if (pvpMode !== "player_choice") {
-      console.log("PVP is forced, blocking change")
       return NextResponse.json(
         {
           error: "PVP-Einstellungen können nicht geändert werden, da sie vom Server erzwungen werden",
@@ -32,42 +25,31 @@ export async function POST(request: Request) {
       )
     }
 
-    // Einfache Spieler PVP-Einstellung aktualisieren (ohne komplexe Checks)
-    console.log("Updating player PVP setting...")
-    console.log("SQL Query:", "UPDATE players SET pvp_enabled = $1 WHERE username = $2", [pvpEnabled, username])
-
-    const updateResult = await query("UPDATE players SET pvp_enabled = $1 WHERE username = $2", [pvpEnabled, username])
-
-    console.log("Update result rowCount:", updateResult.rowCount)
+    // Spieler PVP-Einstellung aktualisieren UND verified auf false setzen
+    const updateResult = await query("UPDATE players SET pvp_enabled = $1, verified = false WHERE username = $2", [
+      pvpEnabled,
+      username,
+    ])
 
     // Prüfe ob Update erfolgreich war
     if (updateResult.rowCount === 0) {
-      console.log("No rows updated - player might not exist")
       return NextResponse.json(
         { error: "Spieler nicht gefunden oder konnte nicht aktualisiert werden" },
         { status: 404 },
       )
     }
 
-    console.log("PVP setting updated successfully")
-    console.log("=== PVP Toggle API End ===")
-
     return NextResponse.json({
       success: true,
-      message: `PVP ${pvpEnabled ? "aktiviert" : "deaktiviert"}`,
+      message: `PVP ${pvpEnabled ? "aktiviert" : "deaktiviert"}. Führe /verify auf dem Server aus, um deine Änderungen zu bestätigen.`,
       pvpEnabled,
+      requiresVerification: true,
     })
   } catch (error) {
-    console.error("=== PVP Toggle API ERROR ===")
-    console.error("Error details:", error)
-    console.error("Error message:", error instanceof Error ? error.message : "Unknown error")
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack")
-    console.error("=== END ERROR ===")
-
+    console.error("Fehler beim Aktualisieren der PVP-Einstellung:", error)
     return NextResponse.json(
       {
         error: "Fehler beim Aktualisieren der PVP-Einstellung",
-        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     )

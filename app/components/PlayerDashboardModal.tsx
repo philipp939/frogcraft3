@@ -52,7 +52,6 @@ export default function PlayerDashboardModal() {
           if (response.ok) {
             const data = await response.json()
             setPvpMode(data.pvpMode)
-            console.log("Loaded PVP Mode:", data.pvpMode) // Debug Log
           }
         } catch (error) {
           console.error("Fehler beim Laden des PVP-Modus:", error)
@@ -70,7 +69,6 @@ export default function PlayerDashboardModal() {
     setCurrentPlayer(null)
 
     try {
-      // Genau wie beim Leaderboard - einfacher GET Request
       const response = await fetch(`/api/player-search?username=${encodeURIComponent(searchUsername)}`)
 
       if (!response.ok) {
@@ -81,7 +79,6 @@ export default function PlayerDashboardModal() {
       }
 
       const data = await response.json()
-      console.log("Player data loaded:", data.player) // Debug Log
       setCurrentPlayer(data.player)
     } catch (error) {
       console.error("Fehler beim Laden der Spielerdaten:", error)
@@ -135,8 +132,6 @@ export default function PlayerDashboardModal() {
   const handlePvpToggle = async (checked: boolean) => {
     if (!currentPlayer) return
 
-    console.log("PVP Toggle clicked:", { username: currentPlayer.username, checked, pvpMode }) // Debug Log
-
     setPvpModeLoading(true)
     try {
       const response = await fetch("/api/player-pvp", {
@@ -150,24 +145,21 @@ export default function PlayerDashboardModal() {
         }),
       })
 
-      console.log("PVP Toggle Response Status:", response.status) // Debug Log
-
       if (response.ok) {
         const responseData = await response.json()
-        console.log("PVP Toggle Response Data:", responseData) // Debug Log
 
-        setCurrentPlayer((prev) => (prev ? { ...prev, pvp_enabled: checked } : null))
+        // Player State aktualisieren (PVP + verified auf false setzen)
+        setCurrentPlayer((prev) => (prev ? { ...prev, pvp_enabled: checked, verified: false } : null))
+
         setMessage({
           type: "success",
-          text: `PVP ${checked ? "aktiviert" : "deaktiviert"}`,
+          text: responseData.message,
         })
       } else {
         const errorData = await response.json()
-        console.error("PVP Toggle Error:", errorData) // Debug Log
         throw new Error(errorData.error || "Fehler beim Aktualisieren der PVP-Einstellung")
       }
     } catch (error) {
-      console.error("PVP Toggle Exception:", error) // Debug Log
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Fehler beim Aktualisieren der PVP-Einstellung",
@@ -234,17 +226,6 @@ export default function PlayerDashboardModal() {
               </CardContent>
             </Card>
 
-            {/* Debug Info */}
-            {currentPlayer && (
-              <Card className="bg-blue-900/20 border-blue-700 rounded-xl">
-                <CardContent className="pt-6">
-                  <p className="text-blue-300 text-sm">
-                    Debug: PVP Mode = {pvpMode}, Player PVP = {currentPlayer.pvp_enabled ? "true" : "false"}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Message */}
             {message && (
               <Card
@@ -268,6 +249,12 @@ export default function PlayerDashboardModal() {
                     <div className="flex justify-between">
                       <span className="text-gray-400">Benutzername:</span>
                       <span className="text-white">{currentPlayer.username}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Verifiziert:</span>
+                      <span className={currentPlayer.verified ? "text-green-400" : "text-red-400"}>
+                        {currentPlayer.verified ? "✓ Ja" : "✗ Nein"}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Spielzeit:</span>
@@ -305,6 +292,18 @@ export default function PlayerDashboardModal() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {!currentPlayer.verified && (
+                      <div className="p-3 rounded-lg bg-yellow-900/30 border border-yellow-800">
+                        <div className="flex items-center">
+                          <AlertTriangle className="h-4 w-4 text-yellow-400 mr-2" />
+                          <p className="text-yellow-300 text-sm">
+                            Dein Account ist nicht verifiziert. Führe{" "}
+                            <code className="bg-black/30 px-1 rounded">/verify</code> auf dem Server aus.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {isPvpForced && (
                       <div className="p-3 rounded-lg bg-orange-900/30 border border-orange-800">
                         <div className="flex items-center">
