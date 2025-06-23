@@ -144,7 +144,7 @@ export default function HomePage() {
                         </div>
                         <span className="text-white font-medium">{player.username}</span>
                       </div>
-                      <span className="text-yellow-400 font-bold">{player.bounty || 0} Coins</span>
+                      <span className="text-yellow-400 font-bold">{player.bounty || 0} €</span>
                     </div>
                   ))
                 ) : (
@@ -181,7 +181,7 @@ export default function HomePage() {
                         </div>
                         <span className="text-white font-medium">{player.username}</span>
                       </div>
-                      <span className="text-green-400 font-bold">{player.balance || 0} $</span>
+                      <span className="text-green-400 font-bold">{player.balance || 0} €</span>
                     </div>
                   ))
                 ) : (

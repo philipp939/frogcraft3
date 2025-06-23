@@ -270,11 +270,11 @@ export default function PlayerDashboardModal() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Bounty:</span>
-                      <span className="text-white">{currentPlayer.bounty || 0} Coins</span>
+                      <span className="text-white">{currentPlayer.bounty || 0} €</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Balance:</span>
-                      <span className="text-white">{currentPlayer.balance || 0} $</span>
+                      <span className="text-white">{currentPlayer.balance || 0} €</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Zuletzt online:</span>

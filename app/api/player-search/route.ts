@@ -10,10 +10,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Benutzername ist erforderlich" }, { status: 400 })
     }
 
-    const playerResult = await query(
-      "SELECT * FROM players WHERE LOWER(username) = LOWER($1)",
-      [username]
-    )
+    const playerResult = await query("SELECT * FROM players WHERE LOWER(username) = LOWER($1)", [username])
 
     if (playerResult.rows.length === 0) {
       return NextResponse.json({ error: "Spieler nicht gefunden" }, { status: 404 })
@@ -33,6 +30,7 @@ export async function GET(request: Request) {
         deaths: player.deaths || 0,
         kills: player.kills || 0,
         bounty: player.bounty || 0,
+        balance: player.balance || 0,
       },
     })
   } catch (error) {
