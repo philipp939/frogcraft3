@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Users, Search, User, Settings, AlertTriangle, Info } from "lucide-react"
+import { Users, Search, User, Settings, AlertTriangle, Info, RefreshCw } from "lucide-react"
 
 interface Player {
   id: number
@@ -146,15 +146,10 @@ export default function PlayerDashboardModal() {
       })
 
       if (response.ok) {
-        const responseData = await response.json()
-
         // Player State aktualisieren (PVP + verified auf false setzen)
         setCurrentPlayer((prev) => (prev ? { ...prev, pvp_enabled: checked, verified: false } : null))
 
-        setMessage({
-          type: "success",
-          text: responseData.message,
-        })
+        // Keine Success Message mehr - nur State Update
       } else {
         const errorData = await response.json()
         throw new Error(errorData.error || "Fehler beim Aktualisieren der PVP-Einstellung")
@@ -166,6 +161,32 @@ export default function PlayerDashboardModal() {
       })
     } finally {
       setPvpModeLoading(false)
+    }
+  }
+
+  const refreshPlayer = async () => {
+    if (!currentPlayer) return
+
+    setIsLoading(true)
+    setMessage(null)
+
+    try {
+      const response = await fetch(`/api/player-search?username=${encodeURIComponent(currentPlayer.username)}`)
+
+      if (!response.ok) {
+        throw new Error("Fehler beim Aktualisieren der Spielerdaten")
+      }
+
+      const data = await response.json()
+      setCurrentPlayer(data.player)
+    } catch (error) {
+      console.error("Fehler beim Aktualisieren der Spielerdaten:", error)
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Fehler beim Aktualisieren der Spielerdaten",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -242,19 +263,22 @@ export default function PlayerDashboardModal() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Player Info */}
                 <Card className="bg-black/40 border-gray-700 rounded-xl">
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="text-white">Spieler-Info</CardTitle>
+                    <Button
+                      onClick={refreshPlayer}
+                      disabled={isLoading}
+                      size="sm"
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700 rounded-lg"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                    </Button>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Benutzername:</span>
                       <span className="text-white">{currentPlayer.username}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Verifiziert:</span>
-                      <span className={currentPlayer.verified ? "text-green-400" : "text-red-400"}>
-                        {currentPlayer.verified ? "✓ Ja" : "✗ Nein"}
-                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Spielzeit:</span>
@@ -297,8 +321,7 @@ export default function PlayerDashboardModal() {
                         <div className="flex items-center">
                           <AlertTriangle className="h-4 w-4 text-yellow-400 mr-2" />
                           <p className="text-yellow-300 text-sm">
-                            Dein Account ist nicht verifiziert. Führe{" "}
-                            <code className="bg-black/30 px-1 rounded">/verify</code> auf dem Server aus.
+                            Führe auf dem Server /verify aus um deine Änderungen zu bestätigen!
                           </p>
                         </div>
                       </div>
