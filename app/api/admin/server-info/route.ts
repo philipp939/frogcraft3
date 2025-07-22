@@ -12,19 +12,26 @@ export async function POST(request: Request) {
 
     switch (action) {
       case "create":
-        await query("INSERT INTO server_info_cards (title, content, type, url, position) VALUES ($1, $2, $3, $4, $5)", [
+        // Prüfen ob bereits 4 Karten existieren
+        const countResult = await query("SELECT COUNT(*) as count FROM server_info_cards")
+        const currentCount = Number.parseInt(countResult.rows[0].count)
+
+        if (currentCount >= 4) {
+          return NextResponse.json({ error: "Maximum von 4 Karten erreicht" }, { status: 400 })
+        }
+
+        await query("INSERT INTO server_info_cards (title, content, type, position) VALUES ($1, $2, $3, $4)", [
           card.title,
           card.content,
-          card.type,
-          card.url || null,
-          card.position || 0,
+          "text", // Immer text, da wir Links über Markdown machen
+          card.position || currentCount + 1,
         ])
         break
 
       case "update":
         await query(
-          "UPDATE server_info_cards SET title = $1, content = $2, type = $3, url = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5",
-          [card.title, card.content, card.type, card.url || null, card.id],
+          "UPDATE server_info_cards SET title = $1, content = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
+          [card.title, card.content, card.id],
         )
         break
 

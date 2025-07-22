@@ -18,8 +18,7 @@ interface ServerInfoCard {
   id: string
   title: string
   content: string
-  type: "text" | "link"
-  url?: string
+  type: "text"
 }
 
 export default function AdminPage() {
@@ -130,6 +129,10 @@ export default function AdminPage() {
   }
 
   const handleAddCard = () => {
+    if (serverInfoCards.length >= 4) {
+      setMessage({ type: "error", text: "Maximum von 4 Karten erreicht!" })
+      return
+    }
     setEditingCard({ id: "", title: "", content: "", type: "text" })
     setIsEditDialogOpen(true)
   }
@@ -195,6 +198,9 @@ export default function AdminPage() {
         })
         setIsEditDialogOpen(false)
         setEditingCard(null)
+      } else {
+        const errorData = await response.json()
+        setMessage({ type: "error", text: errorData.error || "Fehler beim Speichern der Karte" })
       }
     } catch (error) {
       setMessage({ type: "error", text: "Fehler beim Speichern der Karte" })
@@ -382,19 +388,32 @@ export default function AdminPage() {
                 <Settings className="h-5 w-5 mr-2" />
                 Server Information Verwaltung
               </div>
-              <Button onClick={handleAddCard} className="bg-purple-600 hover:bg-purple-700 rounded-lg">
+              <Button
+                onClick={handleAddCard}
+                disabled={serverInfoCards.length >= 4}
+                className="bg-purple-600 hover:bg-purple-700 rounded-lg disabled:opacity-50"
+              >
                 <Plus className="h-4 w-4 mr-2" />
-                Karte hinzufügen
+                Karte hinzufügen ({serverInfoCards.length}/4)
               </Button>
             </CardTitle>
             <CardDescription className="text-gray-400">
-              Verwalte die Server Information Karten auf der Hauptseite
+              Verwalte die Server Information Karten auf der Hauptseite (Maximum: 4 Karten)
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-4 mb-4">
+              <div className="p-4 rounded-lg bg-blue-900/20 border border-blue-800">
+                <p className="text-sm text-blue-300">
+                  <strong>Markdown-Links:</strong> Verwende [Text](URL) um Links zu erstellen. Beispiel:
+                  [Discord](https://discord.com/invite/H2yX7d8Bmv)
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {serverInfoCards.map((card) => (
-                <Card key={card.id} className="bg-black/20 border-white/20">
+                <Card key={card.id} className="bg-black/20 border-white/20 rounded-lg">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-white text-sm flex items-center justify-between">
                       {card.title}
@@ -403,7 +422,7 @@ export default function AdminPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditCard(card)}
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-white rounded"
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
@@ -411,7 +430,7 @@ export default function AdminPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteCard(card.id)}
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-400"
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-400 rounded"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -420,9 +439,6 @@ export default function AdminPage() {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <p className="text-gray-300 text-xs whitespace-pre-line">{card.content}</p>
-                    {card.type === "link" && card.url && (
-                      <p className="text-purple-400 text-xs mt-1">Link: {card.url}</p>
-                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -502,45 +518,10 @@ export default function AdminPage() {
                   id="card-content"
                   value={editingCard.content}
                   onChange={(e) => setEditingCard({ ...editingCard, content: e.target.value })}
-                  className="w-full h-24 bg-black/20 border border-white/20 text-white rounded-lg p-2 resize-none"
-                  placeholder="Karteninhalt eingeben..."
+                  className="w-full h-32 bg-black/20 border border-white/20 text-white rounded-lg p-2 resize-none"
+                  placeholder="Karteninhalt eingeben... Verwende [Text](URL) für Links."
                 />
               </div>
-              <div>
-                <Label htmlFor="card-type" className="text-gray-300">
-                  Typ
-                </Label>
-                <Select
-                  value={editingCard.type}
-                  onValueChange={(value: "text" | "link") => setEditingCard({ ...editingCard, type: value })}
-                >
-                  <SelectTrigger className="bg-black/20 border-white/20 text-white rounded-lg">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 rounded-lg">
-                    <SelectItem value="text" className="text-white hover:bg-gray-700 rounded-md">
-                      Text
-                    </SelectItem>
-                    <SelectItem value="link" className="text-white hover:bg-gray-700 rounded-md">
-                      Link
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {editingCard.type === "link" && (
-                <div>
-                  <Label htmlFor="card-url" className="text-gray-300">
-                    URL
-                  </Label>
-                  <Input
-                    id="card-url"
-                    value={editingCard.url || ""}
-                    onChange={(e) => setEditingCard({ ...editingCard, url: e.target.value })}
-                    className="bg-black/20 border-white/20 text-white rounded-lg"
-                    placeholder="https://..."
-                  />
-                </div>
-              )}
               <div className="flex gap-2 pt-4">
                 <Button onClick={handleSaveCard} className="bg-purple-600 hover:bg-purple-700 rounded-lg">
                   Speichern
