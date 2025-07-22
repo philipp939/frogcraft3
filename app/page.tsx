@@ -67,7 +67,7 @@ export default function HomePage() {
             Willkommen bei <span className="text-purple-400">FrogCraft</span>
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Dein ultimatives Minecraft-Erlebnis mit erweiterten Features, Spielerverwaltung und Community-Tools.
+            Dein deutscher survival Vanila+ Minecraft Server. 
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -195,33 +195,72 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Server Info */}
-      <section className="py-16 px-4 bg-black/20">
-        <div className="container mx-auto text-center">
-          <h3 className="text-3xl font-bold text-white mb-8">Server Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white">Server IP</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <code className="text-purple-400 text-lg font-mono">frog-craft.de</code>
-                <p className="text-gray-400 mt-2">Minecraft Version 1.21.6</p>
-              </CardContent>
-            </Card>
+{/* Server Info */}
+<section className="py-16 px-4 bg-black/20">
+  <div className="container mx-auto text-center">
+    <h3 className="text-3xl font-bold text-white mb-8">Server Information</h3>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-7xl mx-auto">
+      
+      <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-white">Server IP</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <code className="text-purple-400 text-lg font-mono">frog-craft.de</code>
+          <p className="text-gray-400 mt-2">Minecraft Version 1.21.6</p>
+        </CardContent>
+      </Card>
+      
+      <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-white">Server Start</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-purple-400 text-lg font-bold">21.07.2025 um 20:00 Uhr</p>
+        </CardContent>
+      </Card>
+      
+      <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-white">Modpack</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-purple-400 text-lg font-bold">FrogCraft1</p>
+          <p className="text-gray-400 mt-2">
+            Spiele mit unserem Modpack für ein abwechslungsreicheres Minecraft-Erlebnis!
+          </p>
+          <a
+            href="https://www.curseforge.com/minecraft/modpacks/frogcraft1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-400 underline mt-2 inline-block"
+          >
+            Mehr Infos &amp; Download
+          </a>
+        </CardContent>
+      </Card>
+      
+      <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-white">Discord</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-purple-400 text-lg font-bold">Werde Teil unserer Community!</p>
+          <a
+            href="https://discord.com/invite/H2yX7d8Bmv"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-400 underline mt-2 inline-block"
+          >
+            Jetzt beitreten
+          </a>
+        </CardContent>
+      </Card>
 
-            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white">Server Start</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-purple-400 text-lg font-bold">21.07.2025 um 19:00 Uhr</p>
-                <p className="text-gray-400 mt-2">Sei dabei!</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+    </div>
+  </div>
+</section>
+
 
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-white/10">
