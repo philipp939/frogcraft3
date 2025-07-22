@@ -28,30 +28,7 @@ export default function AdminPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [pvpMode, setPvpMode] = useState<PvpMode>("player_choice")
   const [isLoading, setIsLoading] = useState(false)
-  const [serverInfoCards, setServerInfoCards] = useState<ServerInfoCard[]>([
-    {
-      id: "1",
-      title: "Server IP",
-      content: "IP wird ein paar Stunden vor Server Start hier stehen\nMinecraft Version 1.21.6",
-      type: "text",
-    },
-    { id: "2", title: "Server Start", content: "21.07.2025 um 20:00 Uhr", type: "text" },
-    {
-      id: "3",
-      title: "FrogCraft1 Modpack",
-      content: "Download auf CurseForge",
-      type: "link",
-      url: "https://www.curseforge.com/minecraft/modpacks/frogcraft1",
-    },
-    {
-      id: "4",
-      title: "Discord Server",
-      content: "Tritt unserer Community bei",
-      type: "link",
-      url: "https://discord.com/invite/H2yX7d8Bmv",
-    },
-    { id: "5", title: "Gewinnspiel", content: "20€ Preis!\nBalance-Leader nach 4 Wochen gewinnt", type: "text" },
-  ])
+  const [serverInfoCards, setServerInfoCards] = useState<ServerInfoCard[]>([])
   const [editingCard, setEditingCard] = useState<ServerInfoCard | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
@@ -71,6 +48,25 @@ export default function AdminPage() {
 
     if (isAuthenticated) {
       loadPvpMode()
+    }
+  }, [isAuthenticated])
+
+  // Server Info Karten laden
+  useEffect(() => {
+    const loadServerInfoCards = async () => {
+      try {
+        const response = await fetch("/api/server-info")
+        if (response.ok) {
+          const data = await response.json()
+          setServerInfoCards(data.cards || [])
+        }
+      } catch (error) {
+        console.error("Fehler beim Laden der Server Info Karten:", error)
+      }
+    }
+
+    if (isAuthenticated) {
+      loadServerInfoCards()
     }
   }, [isAuthenticated])
 
@@ -134,7 +130,7 @@ export default function AdminPage() {
   }
 
   const handleAddCard = () => {
-    setEditingCard({ id: Date.now().toString(), title: "", content: "", type: "text" })
+    setEditingCard({ id: "", title: "", content: "", type: "text" })
     setIsEditDialogOpen(true)
   }
 
@@ -143,26 +139,66 @@ export default function AdminPage() {
     setIsEditDialogOpen(true)
   }
 
-  const handleDeleteCard = (cardId: string) => {
-    setServerInfoCards((cards) => cards.filter((card) => card.id !== cardId))
-    setMessage({ type: "success", text: "Karte erfolgreich gelöscht" })
+  const handleDeleteCard = async (cardId: string) => {
+    try {
+      const response = await fetch("/api/admin/server-info", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "delete",
+          card: { id: cardId },
+          adminPassword: "kahba",
+        }),
+      })
+
+      if (response.ok) {
+        setServerInfoCards((cards) => cards.filter((card) => card.id !== cardId))
+        setMessage({ type: "success", text: "Karte erfolgreich gelöscht" })
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Fehler beim Löschen der Karte" })
+    }
   }
 
-  const handleSaveCard = () => {
+  const handleSaveCard = async () => {
     if (!editingCard) return
 
-    if (editingCard.id && serverInfoCards.find((card) => card.id === editingCard.id)) {
-      // Bearbeiten
-      setServerInfoCards((cards) => cards.map((card) => (card.id === editingCard.id ? editingCard : card)))
-      setMessage({ type: "success", text: "Karte erfolgreich aktualisiert" })
-    } else {
-      // Hinzufügen
-      setServerInfoCards((cards) => [...cards, editingCard])
-      setMessage({ type: "success", text: "Karte erfolgreich hinzugefügt" })
-    }
+    try {
+      const isEditing = editingCard.id && serverInfoCards.find((card) => card.id === editingCard.id)
+      const action = isEditing ? "update" : "create"
 
-    setIsEditDialogOpen(false)
-    setEditingCard(null)
+      const response = await fetch("/api/admin/server-info", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action,
+          card: editingCard,
+          adminPassword: "kahba",
+        }),
+      })
+
+      if (response.ok) {
+        // Karten neu laden
+        const serverInfoResponse = await fetch("/api/server-info")
+        if (serverInfoResponse.ok) {
+          const data = await serverInfoResponse.json()
+          setServerInfoCards(data.cards || [])
+        }
+
+        setMessage({
+          type: "success",
+          text: isEditing ? "Karte erfolgreich aktualisiert" : "Karte erfolgreich hinzugefügt",
+        })
+        setIsEditDialogOpen(false)
+        setEditingCard(null)
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Fehler beim Speichern der Karte" })
+    }
   }
 
   // Passwort-Eingabe anzeigen, wenn nicht authentifiziert

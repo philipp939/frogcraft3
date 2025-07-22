@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Crown, Trophy, Coins, Gamepad2, Wallet, MessageCircle } from "lucide-react"
+import { Crown, Trophy, Coins, Gamepad2, Wallet, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import PlayerDashboardModal from "./components/PlayerDashboardModal"
@@ -14,10 +14,19 @@ interface LeaderboardPlayer {
   balance?: number
 }
 
+interface ServerInfoCard {
+  id: string
+  title: string
+  content: string
+  type: "text" | "link"
+  url?: string
+}
+
 export default function HomePage() {
   const [killsLeaderboard, setKillsLeaderboard] = useState<LeaderboardPlayer[]>([])
   const [bountyLeaderboard, setBountyLeaderboard] = useState<LeaderboardPlayer[]>([])
   const [balanceLeaderboard, setBalanceLeaderboard] = useState<LeaderboardPlayer[]>([])
+  const [serverInfoCards, setServerInfoCards] = useState<ServerInfoCard[]>([])
 
   // Leaderboards laden
   useEffect(() => {
@@ -37,6 +46,52 @@ export default function HomePage() {
 
     loadLeaderboards()
   }, [])
+
+  // Server Info Karten laden
+  useEffect(() => {
+    const loadServerInfo = async () => {
+      try {
+        const response = await fetch("/api/server-info")
+        if (response.ok) {
+          const data = await response.json()
+          setServerInfoCards(data.cards || [])
+        }
+      } catch (error) {
+        console.error("Fehler beim Laden der Server Info:", error)
+      }
+    }
+
+    loadServerInfo()
+  }, [])
+
+  const renderServerInfoCard = (card: ServerInfoCard) => {
+    return (
+      <Card key={card.id} className="bg-black/40 border-white/10 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center">
+            {card.type === "link" && <ExternalLink className="h-4 w-4 mr-2" />}
+            {card.title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {card.type === "link" && card.url ? (
+            <div>
+              <a
+                href={card.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-400 hover:text-purple-300 underline text-lg font-bold block"
+              >
+                {card.content}
+              </a>
+            </div>
+          ) : (
+            <div className="whitespace-pre-line text-gray-300">{card.content}</div>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -199,69 +254,8 @@ export default function HomePage() {
       <section className="py-16 px-4 bg-black/20">
         <div className="container mx-auto text-center">
           <h3 className="text-3xl font-bold text-white mb-8">Server Information</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white">Server IP</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-400 mt-2">Minecraft Version 1.21.6</p>
-                <p className="text-yellow-400 text-sm mt-2">IP wird ein paar Stunden vor Server Start hier stehen</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white">Server Start</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-purple-400 text-lg font-bold">21.07.2025 um 20:00 Uhr</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white">Community</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <a
-                    href="https://www.curseforge.com/minecraft/modpacks/frogcraft1"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-purple-400 hover:text-purple-300 underline text-lg font-bold block"
-                  >
-                    FrogCraft1 Modpack
-                  </a>
-                  <p className="text-gray-400 text-sm mt-1">Download auf CurseForge</p>
-                </div>
-                <div>
-                  <a
-                    href="https://discord.com/invite/H2yX7d8Bmv"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-purple-400 hover:text-purple-300 underline text-lg font-bold flex items-center"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Discord Server
-                  </a>
-                  <p className="text-gray-400 text-sm mt-1">Tritt unserer Community bei</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Trophy className="h-4 w-4 mr-2 text-yellow-400" />
-                  Gewinnspiel
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-yellow-400 text-lg font-bold">20€ Preis!</p>
-                <p className="text-gray-400 text-sm mt-1">Balance-Leader nach 4 Wochen gewinnt</p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            {serverInfoCards.map(renderServerInfoCard)}
           </div>
         </div>
       </section>
