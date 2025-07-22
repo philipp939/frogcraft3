@@ -1,138 +1,80 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import type React from "react"
+
+import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Users, Search, User, Settings, AlertTriangle, Info, RefreshCw } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { User, Search, Trophy, Coins, Wallet, RefreshCw, AlertTriangle } from "lucide-react"
 
-interface Player {
-  id: number
+interface PlayerData {
   username: string
-  joined_at: string
-  last_seen: string
-  playtime_minutes: number
-  pvp_enabled: boolean
-  verified: boolean
-  deaths: number
   kills: number
   bounty: number
   balance: number
+  pvp_enabled: boolean
+  verified: boolean
 }
-
-type PvpMode = "forced_on" | "forced_off" | "player_choice"
 
 export default function PlayerDashboardModal() {
   const [isOpen, setIsOpen] = useState(false)
   const [searchUsername, setSearchUsername] = useState("")
-  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null)
+  const [playerData, setPlayerData] = useState<PlayerData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-
-  const [pvpMode, setPvpMode] = useState<PvpMode>("player_choice")
-  const [pvpModeLoading, setPvpModeLoading] = useState(false)
-
-  // PVP-Modus beim Öffnen des Modals laden
-  useEffect(() => {
-    if (isOpen) {
-      const loadPvpMode = async () => {
-        try {
-          const response = await fetch("/api/admin/pvp-mode")
-          if (response.ok) {
-            const data = await response.json()
-            setPvpMode(data.pvpMode)
-          }
-        } catch (error) {
-          console.error("Fehler beim Laden des PVP-Modus:", error)
-        }
-      }
-      loadPvpMode()
-    }
-  }, [isOpen])
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const searchPlayer = async () => {
     if (!searchUsername.trim()) return
 
     setIsLoading(true)
-    setMessage(null)
-    setCurrentPlayer(null)
+    setError(null)
+    setPlayerData(null)
 
     try {
       const response = await fetch(`/api/player-search?username=${encodeURIComponent(searchUsername)}`)
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Spieler nicht gefunden")
-        }
-        throw new Error("Fehler beim Laden der Spielerdaten")
-      }
-
       const data = await response.json()
-      setCurrentPlayer(data.player)
+
+      if (response.ok && data.player) {
+        setPlayerData(data.player)
+      } else {
+        setError(data.error || "Spieler nicht gefunden")
+      }
     } catch (error) {
-      console.error("Fehler beim Laden der Spielerdaten:", error)
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Fehler beim Laden der Spielerdaten",
-      })
+      setError("Fehler beim Laden der Spielerdaten")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const formatLastSeen = (dateString: string) => {
-    if (!dateString) return "Nie"
+  const refreshPlayerData = async () => {
+    if (!playerData) return
 
-    const lastSeen = new Date(dateString)
-    const now = new Date()
-    const diffInMs = now.getTime() - lastSeen.getTime()
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
-    const diffInDays = Math.floor(diffInHours / 24)
+    setIsRefreshing(true)
+    try {
+      const response = await fetch(`/api/player-search?username=${encodeURIComponent(playerData.username)}`)
+      const data = await response.json()
 
-    if (diffInHours < 1) {
-      return "Gerade online"
-    } else if (diffInHours < 24) {
-      return `vor ${diffInHours} Stunde${diffInHours !== 1 ? "n" : ""}`
-    } else if (diffInDays === 1) {
-      return "vor 1 Tag"
-    } else {
-      return `vor ${diffInDays} Tagen`
+      if (response.ok && data.player) {
+        setPlayerData(data.player)
+      }
+    } catch (error) {
+      console.error("Fehler beim Aktualisieren der Daten:", error)
+    } finally {
+      setIsRefreshing(false)
     }
   }
 
-  const formatPlaytime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    return `${hours}h ${mins}m`
-  }
+  const togglePvP = async () => {
+    if (!playerData) return
 
-  const isPvpForced = pvpMode !== "player_choice"
-  const pvpForcedValue = pvpMode === "forced_on"
+    const newPvpStatus = !playerData.pvp_enabled
 
-  const getPvpTooltipText = () => {
-    if (pvpMode === "forced_on") {
-      return "PVP wurde vom Server für alle Spieler erzwungen (AN)"
-    } else if (pvpMode === "forced_off") {
-      return "PVP wurde vom Server für alle Spieler erzwungen (AUS)"
-    }
-    return ""
-  }
-
-  const handlePvpToggle = async (checked: boolean) => {
-    if (!currentPlayer) return
-
-    setPvpModeLoading(true)
     try {
       const response = await fetch("/api/player-pvp", {
         method: "POST",
@@ -140,244 +82,158 @@ export default function PlayerDashboardModal() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: currentPlayer.username,
-          pvpEnabled: checked,
+          username: playerData.username,
+          pvp_enabled: newPvpStatus,
         }),
       })
 
       if (response.ok) {
-        // Player State aktualisieren (PVP + verified auf false setzen)
-        setCurrentPlayer((prev) => (prev ? { ...prev, pvp_enabled: checked, verified: false } : null))
-
-        // Keine Success Message mehr - nur State Update
-      } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Fehler beim Aktualisieren der PVP-Einstellung")
+        setPlayerData({
+          ...playerData,
+          pvp_enabled: newPvpStatus,
+          verified: false,
+        })
       }
     } catch (error) {
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Fehler beim Aktualisieren der PVP-Einstellung",
-      })
-    } finally {
-      setPvpModeLoading(false)
+      console.error("Fehler beim Aktualisieren des PVP-Status:", error)
     }
   }
 
-  const refreshPlayer = async () => {
-    if (!currentPlayer) return
-
-    setIsLoading(true)
-    setMessage(null)
-
-    try {
-      const response = await fetch(`/api/player-search?username=${encodeURIComponent(currentPlayer.username)}`)
-
-      if (!response.ok) {
-        throw new Error("Fehler beim Aktualisieren der Spielerdaten")
-      }
-
-      const data = await response.json()
-      setCurrentPlayer(data.player)
-    } catch (error) {
-      console.error("Fehler beim Aktualisieren der Spielerdaten:", error)
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Fehler beim Aktualisieren der Spielerdaten",
-      })
-    } finally {
-      setIsLoading(false)
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      searchPlayer()
     }
   }
 
   return (
-    <TooltipProvider>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg">
-            <Users className="h-5 w-5 mr-2" />
-            Spieler Dashboard
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-900 border-gray-700 rounded-xl">
-          <DialogHeader>
-            <DialogTitle className="text-white flex items-center">
-              <User className="h-5 w-5 mr-2" />
-              Spieler Dashboard
-            </DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Verwalte deine Spielereinstellungen und sieh deine Statistiken ein
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 text-lg rounded-lg">
+          <User className="h-5 w-5 mr-2" />
+          Spieler Dashboard
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl bg-black/90 border-white/10 text-white rounded-xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-center text-purple-400">Spieler Dashboard</DialogTitle>
+        </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Search Section */}
-            <Card className="bg-black/40 border-gray-700 rounded-xl">
+        <div className="space-y-6">
+          {/* Spieler Suche */}
+          <Card className="bg-black/40 border-white/10 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Search className="h-5 w-5 mr-2" />
+                Spieler suchen
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="username" className="text-gray-300">
+                    Minecraft Username
+                  </Label>
+                  <Input
+                    id="username"
+                    value={searchUsername}
+                    onChange={(e) => setSearchUsername(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Username eingeben..."
+                    className="bg-black/20 border-white/20 text-white rounded-lg"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    onClick={searchPlayer}
+                    disabled={isLoading || !searchUsername.trim()}
+                    className="bg-purple-600 hover:bg-purple-700 rounded-lg"
+                  >
+                    {isLoading ? "Suche..." : "Suchen"}
+                  </Button>
+                </div>
+              </div>
+
+              {error && (
+                <Alert className="border-red-500/50 bg-red-500/10 rounded-lg">
+                  <AlertDescription className="text-red-400">{error}</AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Spieler Informationen */}
+          {playerData && (
+            <Card className="bg-black/40 border-white/10 rounded-xl">
               <CardHeader>
-                <CardTitle className="text-white flex items-center text-lg">
-                  <Search className="h-5 w-5 mr-2" />
-                  Spieler suchen
+                <CardTitle className="text-white flex items-center justify-between">
+                  <div className="flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Spieler Informationen
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshPlayerData}
+                    disabled={isRefreshing}
+                    className="border-white/20 text-white hover:bg-white/10 rounded-lg bg-transparent"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                  </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <Label htmlFor="search" className="text-gray-300">
-                      Minecraft-Benutzername
-                    </Label>
-                    <Input
-                      id="search"
-                      placeholder="Dein Minecraft-Name"
-                      value={searchUsername}
-                      onChange={(e) => setSearchUsername(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && searchPlayer()}
-                      className="bg-black/20 border-gray-600 text-white rounded-lg"
-                    />
+              <CardContent className="space-y-6">
+                {/* Spieler Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-red-900/20 p-4 rounded-lg border border-red-800">
+                    <div className="flex items-center mb-2">
+                      <Trophy className="h-5 w-5 text-red-400 mr-2" />
+                      <span className="text-red-400 font-medium">Kills</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{playerData.kills}</p>
                   </div>
-                  <div className="flex items-end">
-                    <Button
-                      onClick={searchPlayer}
-                      disabled={isLoading}
-                      className="bg-purple-600 hover:bg-purple-700 rounded-lg"
-                    >
-                      {isLoading ? "Suche..." : "Suchen"}
-                    </Button>
+
+                  <div className="bg-yellow-900/20 p-4 rounded-lg border border-yellow-800">
+                    <div className="flex items-center mb-2">
+                      <Coins className="h-5 w-5 text-yellow-400 mr-2" />
+                      <span className="text-yellow-400 font-medium">Bounty</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{playerData.bounty} €</p>
+                  </div>
+
+                  <div className="bg-green-900/20 p-4 rounded-lg border border-green-800">
+                    <div className="flex items-center mb-2">
+                      <Wallet className="h-5 w-5 text-green-400 mr-2" />
+                      <span className="text-green-400 font-medium">Balance</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{playerData.balance} €</p>
                   </div>
                 </div>
+
+                {/* PVP Einstellungen */}
+                <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-white font-medium">PVP Status</h4>
+                      <p className="text-gray-400 text-sm">Aktiviere oder deaktiviere PVP für deinen Spieler</p>
+                    </div>
+                    <Switch checked={playerData.pvp_enabled} onCheckedChange={togglePvP} />
+                  </div>
+                </div>
+
+                {/* Verification Warning */}
+                {!playerData.verified && (
+                  <Alert className="border-yellow-500/50 bg-yellow-500/10 rounded-lg">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="text-yellow-400">
+                      Führe auf dem Server /verify aus um deine Änderungen zu bestätigen!
+                    </AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
-
-            {/* Message */}
-            {message && (
-              <Card
-                className={`rounded-xl ${message.type === "success" ? "border-green-500/50 bg-green-500/10" : "border-red-500/50 bg-red-500/10"}`}
-              >
-                <CardContent className="pt-6">
-                  <p className={message.type === "success" ? "text-green-400" : "text-red-400"}>{message.text}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Player Data */}
-            {currentPlayer && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Player Info */}
-                <Card className="bg-black/40 border-gray-700 rounded-xl">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-white">Spieler-Info</CardTitle>
-                    <Button
-                      onClick={refreshPlayer}
-                      disabled={isLoading}
-                      size="sm"
-                      variant="outline"
-                      className="border-gray-600 text-gray-300 hover:bg-gray-700 rounded-lg"
-                    >
-                      <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Benutzername:</span>
-                      <span className="text-white">{currentPlayer.username}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Spielzeit:</span>
-                      <span className="text-white">{formatPlaytime(currentPlayer.playtime_minutes)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Kills:</span>
-                      <span className="text-white">{currentPlayer.kills}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Tode:</span>
-                      <span className="text-white">{currentPlayer.deaths}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Bounty:</span>
-                      <span className="text-white">{currentPlayer.bounty || 0} €</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Balance:</span>
-                      <span className="text-white">{currentPlayer.balance || 0} €</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Zuletzt online:</span>
-                      <span className="text-white">{formatLastSeen(currentPlayer.last_seen)}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* PVP Settings */}
-                <Card className="bg-black/40 border-gray-700 rounded-xl">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center">
-                      <Settings className="h-5 w-5 mr-2" />
-                      PVP-Einstellungen
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {!currentPlayer.verified && (
-                      <div className="p-3 rounded-lg bg-yellow-900/30 border border-yellow-800">
-                        <div className="flex items-center">
-                          <AlertTriangle className="h-4 w-4 text-yellow-400 mr-2" />
-                          <p className="text-yellow-300 text-sm">
-                            Führe auf dem Server /verify aus um deine Änderungen zu bestätigen!
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {isPvpForced && (
-                      <div className="p-3 rounded-lg bg-orange-900/30 border border-orange-800">
-                        <div className="flex items-center">
-                          <AlertTriangle className="h-4 w-4 text-orange-400 mr-2" />
-                          <p className="text-orange-300 text-sm">
-                            PVP wird vom Server erzwungen und kann nicht geändert werden.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between p-4 rounded-lg border border-gray-600 bg-gray-800/50">
-                      <div>
-                        <p className="text-white">PVP aktiviert</p>
-                        <p className="text-sm text-gray-400">
-                          {isPvpForced ? "Vom Server erzwungen" : "Ermöglicht es anderen Spielern, dich zu töten"}
-                        </p>
-                      </div>
-                      <div className="flex items-center">
-                        {isPvpForced ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center">
-                                <Switch
-                                  checked={pvpForcedValue}
-                                  disabled={true}
-                                  className="opacity-50 cursor-not-allowed"
-                                />
-                                <Info className="h-4 w-4 text-gray-400 ml-2" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-gray-800 border-gray-700 text-white rounded-lg">
-                              <p>{getPvpTooltipText()}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <Switch
-                            checked={currentPlayer.pvp_enabled}
-                            disabled={pvpModeLoading}
-                            onCheckedChange={handlePvpToggle}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </TooltipProvider>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

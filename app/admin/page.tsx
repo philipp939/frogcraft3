@@ -8,10 +8,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Crown, Gamepad2, Lock, Users, Shield, Zap } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Crown, Gamepad2, Lock, Users, Shield, Zap, Settings, Plus, Trash2, Edit } from "lucide-react"
 import Link from "next/link"
 
 type PvpMode = "forced_on" | "forced_off" | "player_choice"
+
+interface ServerInfoCard {
+  id: string
+  title: string
+  content: string
+  type: "text" | "link"
+  url?: string
+}
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -19,6 +28,32 @@ export default function AdminPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [pvpMode, setPvpMode] = useState<PvpMode>("player_choice")
   const [isLoading, setIsLoading] = useState(false)
+  const [serverInfoCards, setServerInfoCards] = useState<ServerInfoCard[]>([
+    {
+      id: "1",
+      title: "Server IP",
+      content: "IP wird ein paar Stunden vor Server Start hier stehen\nMinecraft Version 1.21.6",
+      type: "text",
+    },
+    { id: "2", title: "Server Start", content: "21.07.2025 um 20:00 Uhr", type: "text" },
+    {
+      id: "3",
+      title: "FrogCraft1 Modpack",
+      content: "Download auf CurseForge",
+      type: "link",
+      url: "https://www.curseforge.com/minecraft/modpacks/frogcraft1",
+    },
+    {
+      id: "4",
+      title: "Discord Server",
+      content: "Tritt unserer Community bei",
+      type: "link",
+      url: "https://discord.com/invite/H2yX7d8Bmv",
+    },
+    { id: "5", title: "Gewinnspiel", content: "20€ Preis!\nBalance-Leader nach 4 Wochen gewinnt", type: "text" },
+  ])
+  const [editingCard, setEditingCard] = useState<ServerInfoCard | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   // PVP-Modus beim Laden abrufen
   useEffect(() => {
@@ -96,6 +131,38 @@ export default function AdminPage() {
       case "player_choice":
         return "Spieler können PVP individuell aktivieren oder deaktivieren"
     }
+  }
+
+  const handleAddCard = () => {
+    setEditingCard({ id: Date.now().toString(), title: "", content: "", type: "text" })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleEditCard = (card: ServerInfoCard) => {
+    setEditingCard({ ...card })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleDeleteCard = (cardId: string) => {
+    setServerInfoCards((cards) => cards.filter((card) => card.id !== cardId))
+    setMessage({ type: "success", text: "Karte erfolgreich gelöscht" })
+  }
+
+  const handleSaveCard = () => {
+    if (!editingCard) return
+
+    if (editingCard.id && serverInfoCards.find((card) => card.id === editingCard.id)) {
+      // Bearbeiten
+      setServerInfoCards((cards) => cards.map((card) => (card.id === editingCard.id ? editingCard : card)))
+      setMessage({ type: "success", text: "Karte erfolgreich aktualisiert" })
+    } else {
+      // Hinzufügen
+      setServerInfoCards((cards) => [...cards, editingCard])
+      setMessage({ type: "success", text: "Karte erfolgreich hinzugefügt" })
+    }
+
+    setIsEditDialogOpen(false)
+    setEditingCard(null)
   }
 
   // Passwort-Eingabe anzeigen, wenn nicht authentifiziert
@@ -181,7 +248,7 @@ export default function AdminPage() {
         )}
 
         {/* Server Controls */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* PVP Control */}
           <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
             <CardHeader>
@@ -271,6 +338,62 @@ export default function AdminPage() {
           </Card>
         </div>
 
+        {/* Server Information Management */}
+        <Card className="bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center justify-between">
+              <div className="flex items-center">
+                <Settings className="h-5 w-5 mr-2" />
+                Server Information Verwaltung
+              </div>
+              <Button onClick={handleAddCard} className="bg-purple-600 hover:bg-purple-700 rounded-lg">
+                <Plus className="h-4 w-4 mr-2" />
+                Karte hinzufügen
+              </Button>
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              Verwalte die Server Information Karten auf der Hauptseite
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {serverInfoCards.map((card) => (
+                <Card key={card.id} className="bg-black/20 border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-white text-sm flex items-center justify-between">
+                      {card.title}
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditCard(card)}
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteCard(card.id)}
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-400"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <p className="text-gray-300 text-xs whitespace-pre-line">{card.content}</p>
+                    {card.type === "link" && card.url && (
+                      <p className="text-purple-400 text-xs mt-1">Link: {card.url}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Quick Actions */}
         <Card className="mt-8 bg-black/40 border-white/10 backdrop-blur-sm rounded-xl">
           <CardHeader>
@@ -282,7 +405,10 @@ export default function AdminPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link href="/">
-                <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10 rounded-lg">
+                <Button
+                  variant="outline"
+                  className="w-full border-white/20 text-white hover:bg-white/10 rounded-lg bg-transparent"
+                >
                   <Gamepad2 className="h-4 w-4 mr-2" />
                   Zur Hauptseite
                 </Button>
@@ -290,7 +416,7 @@ export default function AdminPage() {
 
               <Button
                 variant="outline"
-                className="w-full border-white/20 text-white hover:bg-white/10 rounded-lg"
+                className="w-full border-white/20 text-white hover:bg-white/10 rounded-lg bg-transparent"
                 onClick={() => setMessage({ type: "success", text: "Server-Neustart geplant" })}
               >
                 Server Neustart
@@ -298,7 +424,7 @@ export default function AdminPage() {
 
               <Button
                 variant="outline"
-                className="w-full border-white/20 text-white hover:bg-white/10 rounded-lg"
+                className="w-full border-white/20 text-white hover:bg-white/10 rounded-lg bg-transparent"
                 onClick={() => setMessage({ type: "success", text: "Backup erstellt" })}
               >
                 Backup erstellen
@@ -307,6 +433,94 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Card Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-black/90 border-white/10 text-white rounded-xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCard?.id && serverInfoCards.find((card) => card.id === editingCard.id)
+                ? "Karte bearbeiten"
+                : "Neue Karte erstellen"}
+            </DialogTitle>
+          </DialogHeader>
+          {editingCard && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="card-title" className="text-gray-300">
+                  Titel
+                </Label>
+                <Input
+                  id="card-title"
+                  value={editingCard.title}
+                  onChange={(e) => setEditingCard({ ...editingCard, title: e.target.value })}
+                  className="bg-black/20 border-white/20 text-white rounded-lg"
+                  placeholder="Kartentitel eingeben..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="card-content" className="text-gray-300">
+                  Inhalt
+                </Label>
+                <textarea
+                  id="card-content"
+                  value={editingCard.content}
+                  onChange={(e) => setEditingCard({ ...editingCard, content: e.target.value })}
+                  className="w-full h-24 bg-black/20 border border-white/20 text-white rounded-lg p-2 resize-none"
+                  placeholder="Karteninhalt eingeben..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="card-type" className="text-gray-300">
+                  Typ
+                </Label>
+                <Select
+                  value={editingCard.type}
+                  onValueChange={(value: "text" | "link") => setEditingCard({ ...editingCard, type: value })}
+                >
+                  <SelectTrigger className="bg-black/20 border-white/20 text-white rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 rounded-lg">
+                    <SelectItem value="text" className="text-white hover:bg-gray-700 rounded-md">
+                      Text
+                    </SelectItem>
+                    <SelectItem value="link" className="text-white hover:bg-gray-700 rounded-md">
+                      Link
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {editingCard.type === "link" && (
+                <div>
+                  <Label htmlFor="card-url" className="text-gray-300">
+                    URL
+                  </Label>
+                  <Input
+                    id="card-url"
+                    value={editingCard.url || ""}
+                    onChange={(e) => setEditingCard({ ...editingCard, url: e.target.value })}
+                    className="bg-black/20 border-white/20 text-white rounded-lg"
+                    placeholder="https://..."
+                  />
+                </div>
+              )}
+              <div className="flex gap-2 pt-4">
+                <Button onClick={handleSaveCard} className="bg-purple-600 hover:bg-purple-700 rounded-lg">
+                  Speichern
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                  className="border-white/20 text-white hover:bg-white/10 rounded-lg"
+                >
+                  Abbrechen
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
