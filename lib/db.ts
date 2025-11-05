@@ -107,6 +107,23 @@ export async function getPvpSetting(): Promise<PvpSetting> {
   return "neutral"
 }
 
+export async function updateAllPlayersPvpStatus(enabled: boolean | null): Promise<boolean> {
+  if (enabled === null) {
+    // Neutral mode - don't change existing statuses
+    return true
+  }
+
+  const { error } = await supabase
+    .from("pvp_players")
+    .update({
+      pvp_enabled: enabled,
+      verified: true,
+    })
+    .neq("pvp_enabled", enabled) // Only update if different
+
+  return !error
+}
+
 export async function setPvpSetting(value: PvpSetting): Promise<boolean> {
   const dbValue = value === "enabled" ? "true" : value === "disabled" ? "false" : null
 
@@ -115,6 +132,12 @@ export async function setPvpSetting(value: PvpSetting): Promise<boolean> {
     .select("id")
     .eq("setting_key", "pvp_mode")
     .single()
+
+  const updateSuccess = await updateAllPlayersPvpStatus(
+    value === "enabled" ? true : value === "disabled" ? false : null,
+  )
+
+  if (!updateSuccess) return false
 
   if (existing) {
     const { error } = await supabase

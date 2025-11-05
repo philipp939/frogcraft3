@@ -2,20 +2,20 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PlayerProfile } from "@/components/player-profile"
 import { Leaderboard } from "@/components/leaderboard"
-import { AdminPanel } from "@/components/admin-panel"
 import type { PvpPlayer } from "@/lib/types"
 import { getPlayerByUsername, updatePlayerPvpStatus, checkAndRollbackIfUnverified } from "@/lib/db"
 
 export default function Home() {
+  const router = useRouter()
   const [playerName, setPlayerName] = useState("")
   const [player, setPlayer] = useState<PvpPlayer | null>(null)
   const [loading, setLoading] = useState(false)
-  const [adminLoggedIn, setAdminLoggedIn] = useState(false)
-  const [showAdminButton, setShowAdminButton] = useState(false)
+  const [playerNotFound, setPlayerNotFound] = useState(false)
   const [pvpForced, setPvpForced] = useState<"enabled" | "disabled" | "neutral">("neutral")
   const [leaderboards, setLeaderboards] = useState<{
     bounty: PvpPlayer[]
@@ -36,12 +36,20 @@ export default function Home() {
     if (!playerName.trim()) return
 
     setLoading(true)
+    setPlayerNotFound(false)
     try {
       const playerData = await getPlayerByUsername(playerName)
-      setPlayer(playerData)
+      if (playerData) {
+        setPlayer(playerData)
+        setPlayerNotFound(false)
+      } else {
+        setPlayer(null)
+        setPlayerNotFound(true)
+      }
     } catch (error) {
       console.error("Error fetching player:", error)
       setPlayer(null)
+      setPlayerNotFound(true)
     } finally {
       setLoading(false)
     }
@@ -94,19 +102,6 @@ export default function Home() {
 
   if (!mounted) return null
 
-  if (adminLoggedIn) {
-    return (
-      <div className="min-h-screen bg-background">
-        <AdminPanel
-          onLogout={() => {
-            setAdminLoggedIn(false)
-            loadPvpSetting()
-          }}
-        />
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <div className="fixed inset-0 -z-10 pointer-events-none">
@@ -124,21 +119,13 @@ export default function Home() {
             <h1 className="text-2xl sm:text-3xl font-bold gradient-text">FrogCraft</h1>
           </div>
 
-          <button
-            onClick={() => setShowAdminButton(!showAdminButton)}
-            className="opacity-0 hover:opacity-0 absolute pointer-events-none"
-            title="Easter egg"
-          />
-
-          {showAdminButton && (
-            <Button
-              onClick={() => setAdminLoggedIn(true)}
-              variant="outline"
-              className="border-primary/50 hover:border-primary hover:bg-primary/10 transition-all"
-            >
-              Admin
-            </Button>
-          )}
+          <Button
+            onClick={() => router.push("/admin")}
+            variant="outline"
+            className="border-primary/50 hover:border-primary hover:bg-primary/10 transition-all"
+          >
+            Admin
+          </Button>
         </div>
       </header>
 
@@ -179,7 +166,7 @@ export default function Home() {
             </div>
           )}
 
-          {player === null && playerName && !loading && (
+          {playerNotFound && !loading && (
             <div className="glass rounded-xl p-8 border border-destructive/30 text-center animate-fade-in">
               <p className="text-destructive">Spieler "{playerName}" nicht gefunden. Überprüfe die Schreibweise!</p>
             </div>
@@ -200,7 +187,7 @@ export default function Home() {
 
       <footer className="border-t border-border/50 mt-20 py-8 glass">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-foreground/50 text-sm">
-          <p>FrogCraft PvP Server | Gib doppelt 'A' auf der Tastatur für Admin-Access</p>
+          <p>FrogCraft PvP Server</p>
         </div>
       </footer>
     </div>
