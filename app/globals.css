@@ -158,15 +158,6 @@
     }
   }
 
-  @keyframes shimmer {
-    0% {
-      background-position: -1000px 0;
-    }
-    100% {
-      background-position: 1000px 0;
-    }
-  }
-
   .animate-fade-in {
     animation: fadeIn 0.6s ease-out;
   }
@@ -179,9 +170,7 @@
     animation: glow 2s ease-in-out infinite;
   }
 
-  .group:hover .group-hover\:scale-105 {
-    transform: scale(1.05);
-  }
+  /* Removed broken shimmer animation and group-hover rule */
 
   /* Glass morphism effect */
   .glass {

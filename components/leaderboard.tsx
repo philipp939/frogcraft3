@@ -21,7 +21,7 @@ export function Leaderboard({ title, players, type }: LeaderboardProps) {
   }
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6">
+    <div className="bg-card border border-border rounded-lg p-6 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/50 cursor-pointer">
       <h3 className="text-xl font-bold mb-4">{title}</h3>
       <div className="space-y-2">
         {players.map((player, index) => (
