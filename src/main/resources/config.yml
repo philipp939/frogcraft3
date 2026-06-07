@@ -1,0 +1,15 @@
+# FrogCraftManager Konfiguration
+
+# API-Konfiguration
+api:
+  # URL der API (ohne abschließenden Schrägstrich)
+  url: "https://deine-website.vercel.app/api/minecraft"
+  
+  # API-Schlüssel (muss mit dem Schlüssel auf der Website übereinstimmen)
+  key: "dein-api-key"
+
+# Aktualisierungsintervall für Spielereinstellungen (in Sekunden)
+refresh-interval: 300
+
+# Debug-Modus (true/false)
+debug: false

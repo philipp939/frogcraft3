@@ -1,191 +1,220 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Crown, Trophy, Coins, Gamepad2, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { PlayerProfile } from "@/components/player-profile"
-import { Leaderboard } from "@/components/leaderboard"
-import type { PvpPlayer } from "@/lib/types"
-import { getPlayerByUsername, updatePlayerPvpStatus, checkAndRollbackIfUnverified } from "@/lib/db"
+import PlayerDashboardModal from "./components/PlayerDashboardModal"
 
-export default function Home() {
-  const router = useRouter()
-  const [playerName, setPlayerName] = useState("")
-  const [player, setPlayer] = useState<PvpPlayer | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [playerNotFound, setPlayerNotFound] = useState(false)
-  const [pvpForced, setPvpForced] = useState<"enabled" | "disabled" | "neutral">("neutral")
-  const [leaderboards, setLeaderboards] = useState<{
-    bounty: PvpPlayer[]
-    balance: PvpPlayer[]
-    playtime: PvpPlayer[]
-  } | null>(null)
-  const [mounted, setMounted] = useState(false)
-  const [rollbackTimers, setRollbackTimers] = useState<Map<string, NodeJS.Timeout>>(new Map())
-  const [isDevelopment, setIsDevelopment] = useState(false)
+interface LeaderboardPlayer {
+  username: string
+  kills?: number
+  bounty?: number
+  balance?: number
+}
 
+export default function HomePage() {
+  const [killsLeaderboard, setKillsLeaderboard] = useState<LeaderboardPlayer[]>([])
+  const [bountyLeaderboard, setBountyLeaderboard] = useState<LeaderboardPlayer[]>([])
+  const [balanceLeaderboard, setBalanceLeaderboard] = useState<LeaderboardPlayer[]>([])
+
+  // Leaderboards laden
   useEffect(() => {
-    setMounted(true)
+    const loadLeaderboards = async () => {
+      try {
+        console.log("[v0] Fetching leaderboards from /api/leaderboard")
+        const response = await fetch("/api/leaderboard")
+        if (response.ok) {
+          const data = await response.json()
+          console.log("[v0] Leaderboard data received:", data)
+          setKillsLeaderboard(data.kills || [])
+          setBountyLeaderboard(data.bounty || [])
+          setBalanceLeaderboard(data.balance || [])
+        } else {
+          console.error("[v0] Leaderboard API returned non-ok status:", response.status)
+        }
+      } catch (error) {
+        console.error("[v0] Fehler beim Laden der Leaderboards:", error)
+      }
+    }
+
     loadLeaderboards()
-    loadPvpSetting()
-    setIsDevelopment(process.env.NODE_ENV === "development")
-  }, []) // This effect runs once on mount
-
-  const handleSearchPlayer = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!playerName.trim()) return
-
-    setLoading(true)
-    setPlayerNotFound(false)
-    try {
-      const playerData = await getPlayerByUsername(playerName)
-      if (playerData) {
-        setPlayer(playerData)
-        setPlayerNotFound(false)
-      } else {
-        setPlayer(null)
-        setPlayerNotFound(true)
-      }
-    } catch (error) {
-      console.error("Error fetching player:", error)
-      setPlayer(null)
-      setPlayerNotFound(true)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleTogglePvp = async () => {
-    if (!player) return
-    try {
-      await updatePlayerPvpStatus(player.uuid, !player.pvp_enabled)
-      setPlayer({ ...player, pvp_enabled: !player.pvp_enabled, verified: false })
-
-      if (rollbackTimers.has(player.uuid)) {
-        clearTimeout(rollbackTimers.get(player.uuid)!)
-      }
-
-      const timer = setTimeout(() => {
-        checkAndRollbackIfUnverified(player.uuid)
-        setRollbackTimers((prev) => {
-          const newMap = new Map(prev)
-          newMap.delete(player.uuid)
-          return newMap
-        })
-      }, 60000)
-
-      setRollbackTimers((prev) => new Map(prev).set(player.uuid, timer))
-    } catch (error) {
-      console.error("Error toggling PVP:", error)
-    }
-  }
-
-  const loadLeaderboards = async () => {
-    try {
-      const response = await fetch("/api/leaderboards")
-      const data = await response.json()
-      setLeaderboards(data)
-    } catch (error) {
-      console.error("Error loading leaderboards:", error)
-    }
-  }
-
-  const loadPvpSetting = async () => {
-    try {
-      const response = await fetch("/api/pvp-setting")
-      const data = await response.json()
-      setPvpForced(data.setting)
-    } catch (error) {
-      console.error("Error loading PVP setting:", error)
-    }
-  }
-
-  if (!mounted) return null
+    const interval = setInterval(loadLeaderboards, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-hidden">
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-        <div
-          className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "1s" }}
-        />
-      </div>
-
-      <header className="sticky top-0 z-40 border-b border-border/50 glass">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">⛏</div>
-            <h1 className="text-2xl sm:text-3xl font-bold gradient-text">FrogCraft</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Header */}
+      <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Gamepad2 className="h-8 w-8 text-purple-400" />
+              <h1 className="text-2xl font-bold text-white">FrogCraft</h1>
+            </div>
+            <nav className="flex items-center space-x-4">
+              <Link href="/admin">
+                <Button variant="ghost" className="text-white hover:text-purple-300 rounded-lg">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Admin
+                </Button>
+              </Link>
+            </nav>
           </div>
-
-          <Button
-            onClick={() => router.push("/admin")}
-            variant="outline"
-            className="border-primary/50 hover:border-primary hover:bg-primary/10 transition-all"
-          >
-            Admin
-          </Button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-        <section className="animate-slide-up">
-          <div className="text-center space-y-6 mb-12">
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
-              Willkommen bei <span className="gradient-text">FrogCraft</span>
-            </h2>
-            <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
-              Verwalte deinen PvP-Status und überblicke die Top-Spieler unseres Servers
-            </p>
+      {/* Hero Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto text-center">
+          <h2 className="text-5xl font-bold text-white mb-6">
+            Willkommen bei <span className="text-purple-400">FrogCraft</span>
+          </h2>
+          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+            Ein deutscher Minecraft Vanilla+ Server mit erweiterten Features.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <PlayerDashboardModal />
           </div>
+        </div>
+      </section>
 
-          <div className="glass rounded-xl p-8 mb-12 border border-primary/20 hover:border-primary/50 transition-all duration-300 animate-fade-in">
-            <h3 className="text-xl font-semibold mb-4 text-foreground">Spieler-Profil</h3>
-            <form onSubmit={handleSearchPlayer} className="flex flex-col sm:flex-row gap-3">
-              <Input
-                type="text"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="Gib deinen Minecraft-Namen ein..."
-                className="flex-1 bg-input border-border/50 hover:border-border transition-colors text-foreground placeholder:text-foreground/50"
-              />
-              <Button
-                type="submit"
-                disabled={loading}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 transition-all duration-300 hover:scale-105"
-              >
-                {loading ? "Lädt..." : "Suchen"}
-              </Button>
-            </form>
+      {/* Leaderboards */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
+          <h3 className="text-3xl font-bold text-white text-center mb-12">Leaderboards</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Kills Leaderboard */}
+            <div className="leaderboard-card p-6 rounded-xl">
+              <div className="flex items-center mb-6">
+                <Trophy className="h-6 w-6 text-red-400 mr-2" />
+                <h4 className="text-xl font-bold text-white">Top Kills</h4>
+              </div>
+              <div className="space-y-3">
+                {killsLeaderboard.length > 0 ? (
+                  killsLeaderboard.slice(0, 5).map((player, index) => (
+                    <div
+                      key={player.username}
+                      className="leaderboard-item p-3 flex items-center justify-between rounded-lg"
+                    >
+                      <div className="flex items-center">
+                        <div
+                          className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
+                            index === 0
+                              ? "bg-yellow-500 text-black rounded-full"
+                              : index === 1
+                                ? "bg-gray-400 text-black rounded-full"
+                                : index === 2
+                                  ? "bg-amber-600 text-black rounded-full"
+                                  : "bg-gray-600 text-white rounded-full"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className="text-white font-medium">{player.username}</span>
+                      </div>
+                      <span className="text-red-400 font-bold">{player.kills || 0} Kills</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-400 py-8">
+                    <p>Noch keine Daten verfügbar</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bounty Leaderboard */}
+            <div className="leaderboard-card p-6 rounded-xl">
+              <div className="flex items-center mb-6">
+                <Coins className="h-6 w-6 text-yellow-400 mr-2" />
+                <h4 className="text-xl font-bold text-white">Top Bounty</h4>
+              </div>
+              <div className="space-y-3">
+                {bountyLeaderboard.length > 0 ? (
+                  bountyLeaderboard.slice(0, 5).map((player, index) => (
+                    <div
+                      key={player.username}
+                      className="leaderboard-item p-3 flex items-center justify-between rounded-lg"
+                    >
+                      <div className="flex items-center">
+                        <div
+                          className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
+                            index === 0
+                              ? "bg-yellow-500 text-black rounded-full"
+                              : index === 1
+                                ? "bg-gray-400 text-black rounded-full"
+                                : index === 2
+                                  ? "bg-amber-600 text-black rounded-full"
+                                  : "bg-gray-600 text-white rounded-full"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className="text-white font-medium">{player.username}</span>
+                      </div>
+                      <span className="text-yellow-400 font-bold">{player.bounty || 0} €</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-400 py-8">
+                    <p>Noch keine Daten verfügbar</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Balance Leaderboard */}
+            <div className="leaderboard-card p-6 rounded-xl">
+              <div className="flex items-center mb-6">
+                <Wallet className="h-6 w-6 text-green-400 mr-2" />
+                <h4 className="text-xl font-bold text-white">Top Balance</h4>
+              </div>
+              <div className="space-y-3">
+                {balanceLeaderboard.length > 0 ? (
+                  balanceLeaderboard.slice(0, 5).map((player, index) => (
+                    <div
+                      key={player.username}
+                      className="leaderboard-item p-3 flex items-center justify-between rounded-lg"
+                    >
+                      <div className="flex items-center">
+                        <div
+                          className={`w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 ${
+                            index === 0
+                              ? "bg-yellow-500 text-black rounded-full"
+                              : index === 1
+                                ? "bg-gray-400 text-black rounded-full"
+                                : index === 2
+                                  ? "bg-amber-600 text-black rounded-full"
+                                  : "bg-gray-600 text-white rounded-full"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className="text-white font-medium">{player.username}</span>
+                      </div>
+                      <span className="text-green-400 font-bold">{player.balance || 0} €</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-400 py-8">
+                    <p>Noch keine Daten verfügbar</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
 
-          {player && (
-            <div className="animate-fade-in">
-              <PlayerProfile player={player} onTogglePvp={handleTogglePvp} pvpForced={pvpForced} />
-            </div>
-          )}
-
-          {playerNotFound && !loading && (
-            <div className="glass rounded-xl p-8 border border-destructive/30 text-center animate-fade-in">
-              <p className="text-destructive">Spieler "{playerName}" nicht gefunden. Überprüfe die Schreibweise!</p>
-            </div>
-          )}
-        </section>
-
-        {leaderboards && (
-          <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center gradient-text">Top Spieler</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Leaderboard title="Bounty" players={leaderboards.bounty} type="bounty" />
-              <Leaderboard title="Balance" players={leaderboards.balance} type="balance" />
-              <Leaderboard title="Spielzeit" players={leaderboards.playtime} type="playtime" />
-            </div>
-          </section>
-        )}
-      </main>
+      {/* Footer */}
+      <footer className="py-8 px-4 border-t border-white/10">
+        <div className="container mx-auto text-center text-gray-400">
+          <p>&copy; 2025 FrogCraft. Alle Rechte vorbehalten.</p>
+        </div>
+      </footer>
     </div>
   )
 }
